@@ -45,7 +45,7 @@ jobs:
       - name: Generate static site
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-          GOOGLE_SHEET_ID: Vid837zHDbtGlQy9gt4F6RzCQuFDb4-6EhgV3y-iazQ
+          GOOGLE_SHEET_ID: 1Vid837zHDbtGlQy9gt4F6RzCQuFDb4-6EhgV3y-iazQ
           GOOGLE_SHEET_TAB: biere
           OUTPUT_DIR: _site
         run: python scripts/generate_site.py

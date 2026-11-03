@@ -8,7 +8,7 @@ The source spreadsheet remains private. **The generated page is public**, so onl
 
 The workflow is configured for:
 
-- Spreadsheet ID: `Vid837zHDbtGlQy9gt4F6RzCQuFDb4-6EhgV3y-iazQ`
+- Spreadsheet ID: `1Vid837zHDbtGlQy9gt4F6RzCQuFDb4-6EhgV3y-iazQ`
 - Tab: `biere`
 - Header labels in the first row: `Sud` and `Biername`
 
