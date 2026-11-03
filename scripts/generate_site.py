@@ -13,7 +13,7 @@ from google.oauth2 import service_account
 
 
 SHEET_ID = os.environ.get(
-    "GOOGLE_SHEET_ID", "Vid837zHDbtGlQy9gt4F6RzCQuFDb4-6EhgV3y-iazQ"
+    "GOOGLE_SHEET_ID", "1Vid837zHDbtGlQy9gt4F6RzCQuFDb4-6EhgV3y-iazQ"
 )
 SHEET_TAB = os.environ.get("GOOGLE_SHEET_TAB", "biere")
 HEADERS = ("Sud", "Biername")
