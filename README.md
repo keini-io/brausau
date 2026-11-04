@@ -10,16 +10,16 @@ The workflow is configured for:
 
 - Spreadsheet ID: `1Vid837zHDbtGlQy9gt4F6RzCQuFDb4-6EhgV3y-iazQ`
 - Tab: `biere`
-- Header labels in the first row: `Sud`, `Biername`, `Bierstil`, `Gebraut am`, `Alc`, `Stammwürze`, `IBU`, `Trinktemperatur`, `Best before`, `Passt gut zu`, `Info`, `Zutaten`, and `Leer`
+- Header labels in the first row: `ID`, `Sud`, `Biername`, `Bierstil`, `Gebraut am`, `Alc`, `Stammwürze`, `IBU`, `Trinktemperatur`, `Best before`, `Passt gut zu`, `Info`, `Zutaten`, and `Leer`
 
-The script locates those columns by their header labels, so their order does not matter. It skips the header row. `Leer` is used as a visibility flag and is not displayed: only rows where `Leer` is `0` are shown; rows with `1`, an empty cell, or any other value are excluded. Rows where all displayed cells are blank are also ignored. If there are no visible data rows, the page says “No data available.” Values are HTML-escaped and rendered as plain text.
+The script locates those columns by their header labels, so their order does not matter. Give each beer a unique, stable `ID` made of letters, numbers, hyphens, or underscores (for example, `beer-001`). IDs are used in detail-page URLs and should not change when a beer's name changes. It skips the header row. `Leer` is used as a visibility flag and is not displayed: only rows where `Leer` is `0` are shown; rows with `1`, an empty cell, or any other value are excluded. Every visible row must have a valid, unique ID. Rows where all displayed cells are blank are also ignored. If there are no visible data rows, the page says “No data available.” Values are HTML-escaped and rendered as plain text.
 
 ## Site files
 
 - `site/index.html` is the home page template.
 - `site/assets/logo_v2.svg` is loaded as the home-page logo image.
 - `site/assets/fonts/` contains the Skranji font files and license.
-- The workflow generates the table at `/beers/` and copies the home page and assets into the published output.
+- The workflow generates a beer selector at `/beers/` and detail pages at `/beers/<ID>/`, and copies the home page and assets into the published output.
 
 ## One-time Google setup
 
