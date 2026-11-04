@@ -33,4 +33,4 @@ bin/
 .venv/
 __pycache__/
 *.py[cod]
-public/index.html
+/public/

@@ -5,6 +5,7 @@ from __future__ import annotations
 import html
 import json
 import os
+import shutil
 from pathlib import Path
 from urllib.parse import quote
 
@@ -17,7 +18,7 @@ SHEET_ID = os.environ.get(
 )
 SHEET_TAB = os.environ.get("GOOGLE_SHEET_TAB", "biere")
 HEADERS = ("Sud", "Biername")
-OUTPUT = Path(os.environ.get("OUTPUT_DIR", "public")) / "index.html"
+OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", "public"))
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
 
@@ -85,16 +86,18 @@ def render(rows: list[list[str]]) -> str:
         content = '<p class="empty">No data available.</p>'
 
     return f"""<!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A read-only list of beers.">
-  <title>Beer list</title>
+  <meta name="description" content="Die Brausau-Bierliste.">
+  <title>Bierliste | Brausau</title>
   <style>
     :root {{ color-scheme: light; font-family: system-ui, sans-serif; color: #20251f; background: #f5f6f2; }}
     body {{ margin: 0; }}
     main {{ width: min(900px, calc(100% - 2rem)); margin: 3rem auto; }}
+    nav {{ margin-bottom: 2rem; }}
+    nav a {{ color: #31513b; }}
     h1 {{ margin-bottom: 1.5rem; }}
     .table-wrap {{ overflow-x: auto; background: white; border: 1px solid #dfe3dc; border-radius: .75rem; }}
     table {{ width: 100%; border-collapse: collapse; text-align: left; }}
@@ -107,9 +110,10 @@ def render(rows: list[list[str]]) -> str:
 </head>
 <body>
 <main>
-  <h1>Beer list</h1>
+  <nav><a href="../">Home</a></nav>
+  <h1>Bierliste</h1>
   {content}
-  <footer>Data is refreshed about once an hour.</footer>
+  <footer>Die Daten werden ungefähr stündlich aktualisiert.</footer>
 </main>
 </body>
 </html>
@@ -117,10 +121,23 @@ def render(rows: list[list[str]]) -> str:
 
 
 def main() -> None:
-    page = render(sheet_values())
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_text(page, encoding="utf-8")
-    print(f"Generated {OUTPUT}")
+    source_dir = Path("site")
+    if not (source_dir / "index.html").is_file():
+        raise FileNotFoundError("Missing site/index.html home page template.")
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(source_dir, OUTPUT_DIR, dirs_exist_ok=True)
+
+    home_path = OUTPUT_DIR / "index.html"
+    logo_path = OUTPUT_DIR / "assets" / "logo_v2.svg"
+    home = home_path.read_text(encoding="utf-8")
+    logo_svg = logo_path.read_text(encoding="utf-8")
+    home_path.write_text(home.replace("{{LOGO_SVG}}", logo_svg), encoding="utf-8")
+
+    beers_path = OUTPUT_DIR / "beers" / "index.html"
+    beers_path.parent.mkdir(parents=True, exist_ok=True)
+    beers_path.write_text(render(sheet_values()), encoding="utf-8")
+    print(f"Generated {home_path} and {beers_path}")
 
 
 if __name__ == "__main__":

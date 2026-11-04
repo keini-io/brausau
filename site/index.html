@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Brausau">
+  <title>Brausau</title>
+  <style>
+    @font-face {
+      font-family: "Skranji";
+      src: url("assets/fonts/Skranji-Regular.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+    }
+    :root {
+      color-scheme: light;
+      color: #20251f;
+      background: #f5f6f2;
+      font-family: system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+    }
+    main { width: min(680px, 100%); text-align: center; }
+    .logo { display: block; width: min(100%, 530px); margin: 0 auto 2rem; }
+    .logo svg { display: block; width: 100%; height: auto; }
+    a {
+      display: inline-block;
+      padding: .8rem 1.25rem;
+      border-radius: .5rem;
+      background: #31513b;
+      color: white;
+      text-decoration: none;
+      font-weight: 650;
+    }
+    a:hover, a:focus-visible { background: #243e2d; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="logo" role="img" aria-label="Brausau logo">
+      {{LOGO_SVG}}
+    </div>
+    <a href="beers/">Zur Bierliste</a>
+  </main>
+</body>
+</html>

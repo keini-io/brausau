@@ -1,6 +1,6 @@
 # Beer list site
 
-A small static website generated from a private Google Sheet. GitHub Actions reads the sheet with read-only access, generates `index.html`, and publishes the generated page with GitHub Pages about once an hour.
+A small static website with a home page and a beer list generated from a private Google Sheet. GitHub Actions reads the sheet with read-only access and publishes the site with GitHub Pages about once an hour.
 
 The source spreadsheet remains private. **The generated page is public**, so only put information in the selected columns that you intend to show publicly.
 
@@ -13,6 +13,13 @@ The workflow is configured for:
 - Header labels in the first row: `Sud` and `Biername`
 
 The script locates those columns by their header labels, so their order does not matter. It skips the header row and ignores rows where both selected cells are blank. If there are no data rows, the page says “No data available.” Values are HTML-escaped and rendered as plain text.
+
+## Site files
+
+- `site/index.html` is the home page template.
+- `site/assets/logo_v2.svg` is inlined on the home page so the Skranji font can render its SVG text.
+- `site/assets/fonts/` contains the Skranji font files and license.
+- The workflow generates the table at `/beers/` and copies the home page and assets into the published output.
 
 ## One-time Google setup
 
@@ -55,4 +62,4 @@ Set `GOOGLE_SERVICE_ACCOUNT_JSON` to the complete JSON key contents in your shel
 python scripts/generate_site.py
 ```
 
-The generated page is `public/index.html`. The workflow uses `_site` as its output directory so it can publish a clean artifact without committing generated data. For local use, set `OUTPUT_DIR` to choose a different location. Never commit the service-account JSON key.
+The generated pages are `public/index.html` and `public/beers/index.html`. The workflow uses `_site` as its output directory so it can publish a clean artifact without committing generated data. For local use, set `OUTPUT_DIR` to choose a different location. Never commit the service-account JSON key.
