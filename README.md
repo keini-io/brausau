@@ -10,9 +10,9 @@ The workflow is configured for:
 
 - Spreadsheet ID: `1Vid837zHDbtGlQy9gt4F6RzCQuFDb4-6EhgV3y-iazQ`
 - Tab: `biere`
-- Header labels in the first row: `Sud` and `Biername`
+- Header labels in the first row: `Sud`, `Biername`, `Bierstil`, `Gebraut am`, `Alc`, `Stammwürze`, `IBU`, `Trinktemperatur`, `Best before`, and `Passt gut zu`
 
-The script locates those columns by their header labels, so their order does not matter. It skips the header row and ignores rows where both selected cells are blank. If there are no data rows, the page says “No data available.” Values are HTML-escaped and rendered as plain text.
+The script locates those columns by their header labels, so their order does not matter. It skips the header row and ignores rows where all selected cells are blank. If there are no data rows, the page says “No data available.” Values are HTML-escaped and rendered as plain text.
 
 ## Site files
 

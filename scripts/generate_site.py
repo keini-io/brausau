@@ -17,7 +17,18 @@ SHEET_ID = os.environ.get(
     "GOOGLE_SHEET_ID", "1Vid837zHDbtGlQy9gt4F6RzCQuFDb4-6EhgV3y-iazQ"
 )
 SHEET_TAB = os.environ.get("GOOGLE_SHEET_TAB", "biere")
-HEADERS = ("Sud", "Biername")
+HEADERS = (
+    "Sud",
+    "Biername",
+    "Bierstil",
+    "Gebraut am",
+    "Alc",
+    "Stammwürze",
+    "IBU",
+    "Trinktemperatur",
+    "Best before",
+    "Passt gut zu",
+)
 OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", "public"))
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
@@ -61,6 +72,9 @@ def render(rows: list[list[str]]) -> str:
         )
 
     column_indexes = [header_row.index(name) for name in HEADERS]
+    table_headers = "".join(
+        f'<th scope="col">{escape(name)}</th>' for name in HEADERS
+    )
     records = []
     for row in rows[1:]:  # The first row contains headers, never display it as data.
         values = [row[index] if index < len(row) else "" for index in column_indexes]
@@ -76,7 +90,7 @@ def render(rows: list[list[str]]) -> str:
         )
         content = f"""<div class="table-wrap">
     <table>
-      <thead><tr><th scope="col">Sud</th><th scope="col">Biername</th></tr></thead>
+      <thead><tr>{table_headers}</tr></thead>
       <tbody>
 {table_body}
       </tbody>
