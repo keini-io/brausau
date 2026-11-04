@@ -17,7 +17,7 @@ SHEET_ID = os.environ.get(
     "GOOGLE_SHEET_ID", "1Vid837zHDbtGlQy9gt4F6RzCQuFDb4-6EhgV3y-iazQ"
 )
 SHEET_TAB = os.environ.get("GOOGLE_SHEET_TAB", "biere")
-HEADERS = (
+DISPLAY_HEADERS = (
     "Sud",
     "Biername",
     "Bierstil",
@@ -28,7 +28,11 @@ HEADERS = (
     "Trinktemperatur",
     "Best before",
     "Passt gut zu",
+    "Info",
+    "Zutaten",
 )
+VISIBILITY_HEADER = "Leer"
+REQUIRED_HEADERS = (*DISPLAY_HEADERS, VISIBILITY_HEADER)
 OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", "public"))
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
@@ -65,18 +69,22 @@ def render(rows: list[list[str]]) -> str:
         raise ValueError("The sheet is empty; the first row must contain the column headers.")
 
     header_row = rows[0]
-    missing = [name for name in HEADERS if name not in header_row]
+    missing = [name for name in REQUIRED_HEADERS if name not in header_row]
     if missing:
         raise ValueError(
             "Could not find expected header(s) in the first row: " + ", ".join(missing)
         )
 
-    column_indexes = [header_row.index(name) for name in HEADERS]
+    column_indexes = [header_row.index(name) for name in DISPLAY_HEADERS]
+    visibility_index = header_row.index(VISIBILITY_HEADER)
     table_headers = "".join(
-        f'<th scope="col">{escape(name)}</th>' for name in HEADERS
+        f'<th scope="col">{escape(name)}</th>' for name in DISPLAY_HEADERS
     )
     records = []
     for row in rows[1:]:  # The first row contains headers, never display it as data.
+        visibility = row[visibility_index].strip() if visibility_index < len(row) else ""
+        if visibility != "0":
+            continue
         values = [row[index] if index < len(row) else "" for index in column_indexes]
         if any(value.strip() for value in values):
             records.append(values)
