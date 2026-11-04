@@ -34,10 +34,12 @@ DISPLAY_HEADERS = (
 )
 ID_HEADER = "ID"
 VISIBILITY_HEADER = "Leer"
-REQUIRED_HEADERS = (ID_HEADER, *DISPLAY_HEADERS, VISIBILITY_HEADER)
+COLOR_HEADER = "Farbe"
+REQUIRED_HEADERS = (ID_HEADER, *DISPLAY_HEADERS, COLOR_HEADER, VISIBILITY_HEADER)
 OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", "public"))
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
 
 def sheet_values() -> list[list[str]]:
@@ -79,6 +81,7 @@ def visible_beers(rows: list[list[str]]) -> list[dict[str, str]]:
         )
 
     id_index = header_row.index(ID_HEADER)
+    color_index = header_row.index(COLOR_HEADER)
     column_indexes = {name: header_row.index(name) for name in DISPLAY_HEADERS}
     visibility_index = header_row.index(VISIBILITY_HEADER)
     beers = []
@@ -95,6 +98,12 @@ def visible_beers(rows: list[list[str]]) -> list[dict[str, str]]:
                 f"ID {beer_id!r} on sheet row {row_number} is invalid. "
                 "Use only letters, numbers, hyphens, and underscores; start with a letter or number."
             )
+        color = row[color_index].strip() if color_index < len(row) else ""
+        if not COLOR_PATTERN.fullmatch(color):
+            raise ValueError(
+                f"Invalid or missing Farbe value on sheet row {row_number}: {color!r}. "
+                "Use a six-digit hex color such as #D64B32."
+            )
         if beer_id in seen_ids:
             raise ValueError(
                 f"Duplicate visible beer ID {beer_id!r} on sheet rows "
@@ -107,31 +116,25 @@ def visible_beers(rows: list[list[str]]) -> list[dict[str, str]]:
             for name, index in column_indexes.items()
         }
         if any(value.strip() for value in values.values()):
-            beers.append({ID_HEADER: beer_id, **values})
+            beers.append({ID_HEADER: beer_id, COLOR_HEADER: color, **values})
     return beers
 
 
 def render_beer_index(beers: list[dict[str, str]]) -> str:
     if beers:
-        option_rows = []
+        cards = []
         for beer in beers:
             label = " — ".join(
                 value for value in (beer["Biername"], beer["Sud"]) if value
             )
-            option_rows.append(
-                f'<option value="{escape(beer[ID_HEADER])}/">{escape(label)}</option>'
+            cards.append(
+                f'<a class="beer-card" href="{escape(beer[ID_HEADER])}/" '
+                f'style="--beer-color: {beer[COLOR_HEADER]}">'
+                f'<span class="cap" aria-hidden="true"></span>'
+                f'<span class="beer-name">{escape(label or beer[ID_HEADER])}</span>'
+                "</a>"
             )
-        options = "\n".join(option_rows)
-        content = f"""<form action="#" method="get" onsubmit="if (this.beer.value) {{ window.location.href = this.beer.value; }} return false;">
-    <label for="beer">Bier auswählen</label>
-    <div class="selector-row">
-      <select id="beer" name="beer" required>
-        <option value="">Bitte auswählen …</option>
-{options}
-      </select>
-      <button type="submit">Details anzeigen</button>
-    </div>
-  </form>"""
+        content = f'<div class="beer-grid" id="beer-grid">{chr(10).join(cards)}</div>'
     else:
         content = '<p class="empty">No data available.</p>'
 
@@ -149,16 +152,14 @@ def render_beer_index(beers: list[dict[str, str]]) -> str:
     nav {{ margin-bottom: 2rem; }}
     nav a {{ color: #31513b; }}
     h1 {{ margin-bottom: 1.5rem; }}
-    form {{ max-width: 620px; }}
-    label {{ display: block; margin-bottom: .5rem; font-weight: 650; }}
-    .selector-row {{ display: flex; gap: .75rem; }}
-    select, button {{ min-height: 2.8rem; padding: .65rem .8rem; border: 1px solid #cbd2c8; border-radius: .45rem; font: inherit; }}
-    select {{ flex: 1; min-width: 0; background: white; }}
-    button {{ border: 0; background: #31513b; color: white; font-weight: 650; cursor: pointer; }}
-    button:hover, button:focus-visible {{ background: #243e2d; }}
+    .beer-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 1.25rem .75rem; align-items: center; }}
+    .beer-card {{ min-width: 0; min-height: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem; padding: .5rem; border-radius: .75rem; color: inherit; text-align: center; text-decoration: none; transform: translate(var(--shift-x, 0), var(--shift-y, 0)) rotate(var(--tilt, 0deg)); transition: transform .18s ease, background-color .18s ease; }}
+    .beer-card:hover, .beer-card:focus-visible {{ background: white; transform: translate(var(--shift-x, 0), var(--shift-y, 0)) rotate(0deg) scale(1.04); outline: 2px solid #31513b; outline-offset: 2px; }}
+    .cap {{ width: 84px; aspect-ratio: 142.08 / 130.56; display: block; background-color: var(--beer-color); -webkit-mask: url("../assets/kronkorken.svg") center / contain no-repeat; mask: url("../assets/kronkorken.svg") center / contain no-repeat; filter: drop-shadow(0 3px 2px rgb(0 0 0 / 20%)); }}
+    .beer-name {{ max-width: 100%; font-size: .9rem; font-weight: 600; overflow-wrap: anywhere; }}
     .empty {{ padding: 1rem; background: white; border: 1px solid #dfe3dc; border-radius: .75rem; }}
     footer {{ margin-top: 1rem; color: #626a60; font-size: .875rem; }}
-    @media (max-width: 520px) {{ .selector-row {{ flex-direction: column; }} }}
+    @media (prefers-reduced-motion: reduce) {{ .beer-card {{ transition: none; }} }}
   </style>
 </head>
 <body>
@@ -168,6 +169,22 @@ def render_beer_index(beers: list[dict[str, str]]) -> str:
   {content}
   <footer>Die Daten werden ungefähr stündlich aktualisiert.</footer>
 </main>
+<script>
+  const grid = document.getElementById("beer-grid");
+  if (grid) {{
+    const cards = Array.from(grid.children);
+    for (let i = cards.length - 1; i > 0; i--) {{
+      const j = Math.floor(Math.random() * (i + 1));
+      [cards[i], cards[j]] = [cards[j], cards[i]];
+    }}
+    cards.forEach((card) => {{
+      card.style.setProperty("--tilt", `${{(Math.random() * 10 - 5).toFixed(1)}}deg`);
+      card.style.setProperty("--shift-x", `${{(Math.random() * 10 - 5).toFixed(1)}}px`);
+      card.style.setProperty("--shift-y", `${{(Math.random() * 8 - 4).toFixed(1)}}px`);
+      grid.appendChild(card);
+    }});
+  }}
+</script>
 </body>
 </html>
 """

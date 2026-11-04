@@ -34,3 +34,5 @@ bin/
 __pycache__/
 *.py[cod]
 /public/
+/.run/Generate Beer Site.run.xml
+/.run/Preview Beer Site.run.xml

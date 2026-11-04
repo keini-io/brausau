@@ -10,16 +10,16 @@ The workflow is configured for:
 
 - Spreadsheet ID: `1Vid837zHDbtGlQy9gt4F6RzCQuFDb4-6EhgV3y-iazQ`
 - Tab: `biere`
-- Header labels in the first row: `ID`, `Sud`, `Biername`, `Bierstil`, `Gebraut am`, `Alc`, `Stammwürze`, `IBU`, `Trinktemperatur`, `Best before`, `Passt gut zu`, `Info`, `Zutaten`, and `Leer`
+- Header labels in the first row: `ID`, `Sud`, `Biername`, `Bierstil`, `Gebraut am`, `Alc`, `Stammwürze`, `IBU`, `Trinktemperatur`, `Best before`, `Passt gut zu`, `Info`, `Zutaten`, `Farbe`, and `Leer`
 
-The script locates those columns by their header labels, so their order does not matter. Give each beer a unique, stable `ID` made of letters, numbers, hyphens, or underscores (for example, `beer-001`). IDs are used in detail-page URLs and should not change when a beer's name changes. It skips the header row. `Leer` is used as a visibility flag and is not displayed: only rows where `Leer` is `0` are shown; rows with `1`, an empty cell, or any other value are excluded. Every visible row must have a valid, unique ID. Rows where all displayed cells are blank are also ignored. If there are no visible data rows, the page says “No data available.” Values are HTML-escaped and rendered as plain text.
+The script locates those columns by their header labels, so their order does not matter. Give each beer a unique, stable `ID` made of letters, numbers, hyphens, or underscores (for example, `beer-001`). IDs are used in detail-page URLs and should not change when a beer's name changes. `Farbe` must be a six-digit hex color such as `#D64B32`; it tints that beer's crown-cap icon on the beer index. The icons are shuffled into a new layout on each page load. It skips the header row. `Leer` is used as a visibility flag and is not displayed: only rows where `Leer` is `0` are shown; rows with `1`, an empty cell, or any other value are excluded. Every visible row must have a valid, unique ID and color. Rows where all displayed cells are blank are also ignored. If there are no visible data rows, the page says “No data available.” Values are HTML-escaped and rendered as plain text.
 
 ## Site files
 
 - `site/index.html` is the home page template.
 - `site/assets/logo_v2.svg` is loaded as the home-page logo image.
 - `site/assets/fonts/` contains the Skranji font files and license.
-- The workflow generates a beer selector at `/beers/` and detail pages at `/beers/<ID>/`, and copies the home page and assets into the published output.
+- The workflow generates a randomly arranged crown-cap index at `/beers/` and detail pages at `/beers/<ID>/`, and copies the home page and assets into the published output.
 
 ## One-time Google setup
 
@@ -63,3 +63,5 @@ python scripts/generate_site.py
 ```
 
 The generated pages are `public/index.html` and `public/beers/index.html`. The workflow uses `_site` as its output directory so it can publish a clean artifact without committing generated data. For local use, set `OUTPUT_DIR` to choose a different location. Never commit the service-account JSON key.
+
+In IntelliJ, the shared run configurations **Generate Beer Site** and **Preview Beer Site** run these two commands using `.venv/Scripts/python.exe`. Generate the site first; then start the preview configuration and open `http://localhost:8000/`. The Google credential is deliberately not stored in the run configuration: it must be available as `GOOGLE_SERVICE_ACCOUNT_JSON` in IntelliJ's inherited environment. If you set it in a PowerShell session, start IntelliJ from that same session; otherwise set it as a Windows user environment variable and restart IntelliJ.
