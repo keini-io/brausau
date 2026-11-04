@@ -124,14 +124,11 @@ def render_beer_index(beers: list[dict[str, str]]) -> str:
     if beers:
         cards = []
         for beer in beers:
-            label = " — ".join(
-                value for value in (beer["Biername"], beer["Sud"]) if value
-            )
             cards.append(
                 f'<a class="beer-card" href="{escape(beer[ID_HEADER])}/" '
+                f'aria-label="{escape(beer["Biername"] or beer[ID_HEADER])}" '
                 f'style="--beer-color: {beer[COLOR_HEADER]}">'
                 f'<span class="cap" aria-hidden="true"></span>'
-                f'<span class="beer-name">{escape(label or beer[ID_HEADER])}</span>'
                 "</a>"
             )
         content = f'<div class="beer-grid" id="beer-grid">{chr(10).join(cards)}</div>'
@@ -156,7 +153,6 @@ def render_beer_index(beers: list[dict[str, str]]) -> str:
     .beer-card {{ min-width: 0; min-height: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem; padding: .5rem; border-radius: .75rem; color: inherit; text-align: center; text-decoration: none; transform: translate(var(--shift-x, 0), var(--shift-y, 0)) rotate(var(--tilt, 0deg)); transition: transform .18s ease, background-color .18s ease; }}
     .beer-card:hover, .beer-card:focus-visible {{ background: white; transform: translate(var(--shift-x, 0), var(--shift-y, 0)) rotate(0deg) scale(1.04); outline: 2px solid #31513b; outline-offset: 2px; }}
     .cap {{ width: 84px; aspect-ratio: 142.08 / 130.56; display: block; background-color: var(--beer-color); -webkit-mask: url("../assets/kronkorken.svg") center / contain no-repeat; mask: url("../assets/kronkorken.svg") center / contain no-repeat; filter: drop-shadow(0 3px 2px rgb(0 0 0 / 20%)); }}
-    .beer-name {{ max-width: 100%; font-size: .9rem; font-weight: 600; overflow-wrap: anywhere; }}
     .empty {{ padding: 1rem; background: white; border: 1px solid #dfe3dc; border-radius: .75rem; }}
     footer {{ margin-top: 1rem; color: #626a60; font-size: .875rem; }}
     @media (prefers-reduced-motion: reduce) {{ .beer-card {{ transition: none; }} }}
@@ -167,7 +163,6 @@ def render_beer_index(beers: list[dict[str, str]]) -> str:
   <nav><a href="../">Home</a></nav>
   <h1>Bierliste</h1>
   {content}
-  <footer>Die Daten werden ungefähr stündlich aktualisiert.</footer>
 </main>
 <script>
   const grid = document.getElementById("beer-grid");
