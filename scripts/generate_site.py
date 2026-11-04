@@ -128,16 +128,10 @@ def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source_dir, OUTPUT_DIR, dirs_exist_ok=True)
 
-    home_path = OUTPUT_DIR / "index.html"
-    logo_path = OUTPUT_DIR / "assets" / "logo_v2.svg"
-    home = home_path.read_text(encoding="utf-8")
-    logo_svg = logo_path.read_text(encoding="utf-8")
-    home_path.write_text(home.replace("{{LOGO_SVG}}", logo_svg), encoding="utf-8")
-
     beers_path = OUTPUT_DIR / "beers" / "index.html"
     beers_path.parent.mkdir(parents=True, exist_ok=True)
     beers_path.write_text(render(sheet_values()), encoding="utf-8")
-    print(f"Generated {home_path} and {beers_path}")
+    print(f"Copied home page to {OUTPUT_DIR / 'index.html'} and generated {beers_path}")
 
 
 if __name__ == "__main__":

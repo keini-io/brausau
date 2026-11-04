@@ -6,13 +6,6 @@
   <meta name="description" content="Brausau">
   <title>Brausau</title>
   <style>
-    @font-face {
-      font-family: "Skranji";
-      src: url("assets/fonts/Skranji-Regular.ttf") format("truetype");
-      font-style: normal;
-      font-weight: 400;
-      font-display: swap;
-    }
     :root {
       color-scheme: light;
       color: #20251f;
@@ -28,8 +21,7 @@
       padding: 2rem;
     }
     main { width: min(680px, 100%); text-align: center; }
-    .logo { display: block; width: min(100%, 530px); margin: 0 auto 2rem; }
-    .logo svg { display: block; width: 100%; height: auto; }
+    .logo { display: block; width: min(100%, 530px); height: auto; margin: 0 auto 2rem; }
     a {
       display: inline-block;
       padding: .8rem 1.25rem;
@@ -44,9 +36,7 @@
 </head>
 <body>
   <main>
-    <div class="logo" role="img" aria-label="Brausau logo">
-      {{LOGO_SVG}}
-    </div>
+    <img class="logo" src="assets/logo_v2.svg" alt="Brausau logo">
     <a href="beers/">Zur Bierliste</a>
   </main>
 </body>

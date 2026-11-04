@@ -17,7 +17,7 @@ The script locates those columns by their header labels, so their order does not
 ## Site files
 
 - `site/index.html` is the home page template.
-- `site/assets/logo_v2.svg` is inlined on the home page so the Skranji font can render its SVG text.
+- `site/assets/logo_v2.svg` is loaded as the home-page logo image.
 - `site/assets/fonts/` contains the Skranji font files and license.
 - The workflow generates the table at `/beers/` and copies the home page and assets into the published output.
 
