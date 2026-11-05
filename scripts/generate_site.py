@@ -142,6 +142,9 @@ def render_beer_index(beers: list[dict[str, str]]) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Die Brausau-Bierliste.">
   <title>Bierliste | Brausau</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="icon" type="image/png" sizes="180x180" href="../assets/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <style>
     :root {{ color-scheme: light; font-family: system-ui, sans-serif; color: #20251f; background: #f5f6f2; }}
     body {{ margin: 0; }}
@@ -198,6 +201,9 @@ def render_beer_detail(beer: dict[str, str]) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Details zu {escape(beer['Biername'])}.">
   <title>{escape(beer['Biername'])} | Brausau</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+  <link rel="icon" type="image/png" sizes="180x180" href="../../assets/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png">
   <style>
     :root {{ color-scheme: light; font-family: system-ui, sans-serif; color: #20251f; background: #f5f6f2; }}
     body {{ margin: 0; }}

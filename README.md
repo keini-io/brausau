@@ -18,6 +18,7 @@ The script locates those columns by their header labels, so their order does not
 
 - `site/index.html` is the home page template.
 - `site/assets/logo_v2.svg` is loaded as the home-page logo image.
+- `site/assets/favicon.svg` adapts between a black mark in light mode and a white mark in dark mode; `apple-touch-icon.png` is the square PNG fallback.
 - `site/assets/fonts/` contains the Skranji font files and license.
 - The workflow generates a randomly arranged crown-cap index at `/beers/` and detail pages at `/beers/<ID>/`, and copies the home page and assets into the published output.
 
