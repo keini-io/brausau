@@ -159,7 +159,7 @@ def render_beer_index(beers: list[dict[str, str]]) -> str:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Die Brausau-Bierliste.">
-  <title>Bierliste | Brausau</title>
+  <title>Was trinkst du gerade? | Brausau</title>
   <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg?v=2">
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <style>
@@ -180,8 +180,7 @@ def render_beer_index(beers: list[dict[str, str]]) -> str:
 </head>
 <body>
 <main>
-  <nav><a href="../">Home</a></nav>
-  <h1>Bierliste</h1>
+  <h1>Was trinkst du gerade?</h1>
   {content}
 </main>
 <script>
@@ -214,7 +213,8 @@ def detail_value(name: str, raw: str) -> str:
 
 def render_beer_detail(beer: dict[str, str]) -> str:
     details = "\n".join(
-        f'<div class="detail"><dt>{escape(DISPLAY_LABELS.get(name, name))}</dt>'
+        f'<div class="detail detail-{escape(name.lower().replace(" ", "-"))}">'
+        f'<dt>{escape(DISPLAY_LABELS.get(name, name))}</dt>'
         f'<dd>{escape(detail_value(name, beer[name]))}</dd></div>'
         for name in DISPLAY_HEADERS
         if name != "Biername"
@@ -229,27 +229,64 @@ def render_beer_detail(beer: dict[str, str]) -> str:
   <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg?v=2">
   <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png">
   <style>
-    :root {{ color-scheme: light; font-family: system-ui, sans-serif; color: #20251f; background: #f5f6f2; }}
-    body {{ margin: 0; }}
-    main {{ width: min(760px, calc(100% - 2rem)); margin: 3rem auto; }}
-    nav {{ display: flex; gap: 1rem; margin-bottom: 2rem; }}
-    nav a {{ color: #31513b; }}
-    h1 {{ margin-bottom: 1.5rem; }}
-    dl {{ margin: 0; overflow: hidden; background: white; border: 1px solid #dfe3dc; border-radius: .75rem; }}
-    .detail {{ display: grid; grid-template-columns: minmax(9rem, 1fr) 2fr; gap: 1rem; padding: .85rem 1rem; border-bottom: 1px solid #e8ebe5; }}
-    .detail:last-child {{ border-bottom: 0; }}
-    dt {{ font-weight: 650; }}
-    dd {{ margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }}
-    @media (max-width: 520px) {{ .detail {{ grid-template-columns: 1fr; gap: .25rem; }} }}
+    @font-face {{ font-family: Skranji; src: url("../../assets/fonts/Skranji-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }}
+    :root {{ color-scheme: dark; font-family: system-ui, sans-serif; color: #f5f0e5; background: #111713; font-synthesis: none; }}
+    * {{ box-sizing: border-box; }}
+    body {{ min-height: 100vh; margin: 0; background: radial-gradient(ellipse at 75% 5%, color-mix(in srgb, var(--beer-color) 19%, transparent), transparent 34rem), #111713; }}
+    main {{ width: min(1040px, calc(100% - 2.5rem)); margin: 0 auto; padding: 2rem 0 4rem; }}
+    nav {{ margin-bottom: 1.5rem; }}
+    nav a {{ display: inline-flex; align-items: center; gap: .55rem; color: #e6dfcf; text-decoration: none; font-size: .9rem; font-weight: 650; }}
+    nav a::before {{ content: "←"; color: var(--beer-color); font-size: 1.2rem; transition: transform .2s ease; }}
+    nav a:hover::before {{ transform: translateX(-4px); }}
+    .beer-profile {{ overflow: hidden; border: 1px solid rgb(255 255 255 / 12%); border-radius: 1.5rem; background: linear-gradient(145deg, rgb(255 255 255 / 5%), rgb(255 255 255 / 1%) 50%), #171f1a; box-shadow: 0 24px 80px rgb(0 0 0 / 34%); }}
+    .hero {{ position: relative; isolation: isolate; min-height: 300px; display: flex; align-items: center; padding: clamp(2rem, 7vw, 5rem); border-bottom: 1px solid rgb(255 255 255 / 10%); }}
+    .hero::before {{ position: absolute; z-index: 0; right: 7%; top: 50%; width: clamp(190px, 25vw, 300px); aspect-ratio: 1; content: ""; border: 1px solid color-mix(in srgb, var(--beer-color) 40%, transparent); border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--beer-color) 17%, transparent), transparent 68%); transform: translateY(-50%); }}
+    .hero-copy {{ position: relative; z-index: 1; max-width: 68%; }}
+    .eyebrow {{ display: flex; align-items: center; gap: .7rem; margin: 0 0 1rem; color: #c7bda9; font-size: .72rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }}
+    .eyebrow::before {{ width: 1.6rem; height: 2px; content: ""; background: var(--beer-color); }}
+    h1 {{ max-width: 720px; margin: 0; font-family: Skranji, Georgia, serif; font-size: clamp(2.8rem, 8vw, 6.5rem); font-weight: 700; letter-spacing: -.045em; line-height: .98; text-wrap: balance; }}
+    .hero-mark {{ position: absolute; z-index: 1; right: clamp(2.5rem, 10vw, 7rem); top: 50%; width: clamp(88px, 15vw, 150px); height: auto; overflow: visible; transform: translateY(-50%) rotate(5deg); filter: drop-shadow(0 16px 20px rgb(0 0 0 / 35%)); }}
+    .hero-mark .mug {{ fill: color-mix(in srgb, var(--beer-color) 78%, #d99432); stroke: #f3dfb7; stroke-width: 5; }}
+    .hero-mark .foam {{ fill: #f3dfb7; }}
+    .hero-mark .handle {{ fill: none; stroke: #f3dfb7; stroke-width: 9; }}
+    .details-wrap {{ padding: clamp(.9rem, 2.5vw, 1.5rem); }}
+    .section-heading {{ display: flex; align-items: center; gap: 1rem; margin: 0 0 .55rem; color: #9eaa9f; font-size: .72rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }}
+    .section-heading::after {{ height: 1px; flex: 1; content: ""; background: rgb(255 255 255 / 12%); }}
+    dl {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 1.1rem; margin: 0; }}
+    .detail {{ min-width: 0; min-height: 0; display: flex; align-items: baseline; justify-content: flex-start; gap: .55rem; padding: .55rem .25rem; border: 0; border-bottom: 1px solid rgb(255 255 255 / 6%); border-radius: 0; background: transparent; }}
+    .detail:hover {{ background: rgb(255 255 255 / 2%); }}
+    dt {{ flex: 0 1 auto; color: #aab4aa; font-size: .72rem; font-weight: 700; letter-spacing: .035em; }}
+    dd {{ min-width: 0; margin: 0; color: #f6f0e3; font-size: .95rem; font-weight: 650; line-height: 1.3; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }}
+    .detail-info, .detail-zutaten {{ grid-column: span 3; display: block; padding: .65rem .25rem; }}
+    .detail-info dd, .detail-zutaten dd {{ margin-top: .3rem; font-size: .92rem; font-weight: 450; text-align: left; }}
+    @media (max-width: 720px) {{ dl {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} .detail-info, .detail-zutaten {{ grid-column: span 2; }} }}
+    @media (max-width: 600px) {{ main {{ width: calc(100% - 1rem); max-width: 1040px; padding: .75rem 0 2rem; }} nav {{ margin: 0 0 1rem .25rem; }} .beer-profile {{ border-radius: 1rem; }} .hero {{ min-height: 245px; padding: 2rem 1.35rem; }} .hero::before {{ right: -2.5rem; width: 210px; }} .hero-copy {{ max-width: 100%; }} .hero-mark {{ right: 1.3rem; top: auto; bottom: 1rem; width: 66px; transform: rotate(5deg); }} h1 {{ max-width: calc(100% - 1rem); font-size: clamp(2.6rem, 13vw, 4.2rem); }} .details-wrap {{ padding: .8rem .75rem .7rem; }} .section-heading {{ margin-bottom: .35rem; }} dl {{ grid-template-columns: minmax(0, 1fr); column-gap: 0; }} .detail {{ padding: .48rem .15rem; }} dd {{ font-size: .92rem; }} .detail-info, .detail-zutaten {{ grid-column: auto; padding: .55rem .15rem; }} }}
+    @media (prefers-reduced-motion: reduce) {{ *, *::before, *::after {{ scroll-behavior: auto !important; transition-duration: .01ms !important; }} }}
   </style>
 </head>
 <body>
-<main>
-  <nav><a href="../../">Home</a><a href="../">Zur Bierliste</a></nav>
-  <h1>{escape(beer['Biername'])}</h1>
-  <dl>
+<main style="--beer-color: {beer[COLOR_HEADER]}">
+  <nav><a href="../">andere Farbe</a></nav>
+  <article class="beer-profile">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Brausau · Bierportrait</p>
+        <h1>{escape(beer['Biername'])}</h1>
+      </div>
+      <svg class="hero-mark" viewBox="0 0 120 140" aria-hidden="true" focusable="false">
+        <path class="handle" d="M91 48h10a14 14 0 0 1 0 42H91" />
+        <path class="mug" d="M25 38h66v76a8 8 0 0 1-8 8H33a8 8 0 0 1-8-8z" />
+        <path class="foam" d="M24 43c-9-7-6-20 5-23 2-12 17-17 26-9 9-10 26-5 28 7 13-4 23 9 16 20-4 6-11 8-20 8H34c-4 0-7-1-10-3z" />
+        <path d="M39 62v43M53 62v43M67 62v43" fill="none" stroke="#f3dfb7" stroke-linecap="round" stroke-width="4" opacity=".55" />
+      </svg>
+    </header>
+    <section class="details-wrap" aria-label="Bierdetails">
+      <h2 class="section-heading">Auf einen Blick</h2>
+      <dl>
 {details}
-  </dl>
+      </dl>
+    </section>
+  </article>
 </main>
 </body>
 </html>
