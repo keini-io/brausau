@@ -36,6 +36,17 @@ ID_HEADER = "ID"
 VISIBILITY_HEADER = "Leer"
 COLOR_HEADER = "Farbe"
 REQUIRED_HEADERS = (ID_HEADER, *DISPLAY_HEADERS, COLOR_HEADER, VISIBILITY_HEADER)
+UNIT_SUFFIXES = {
+    "Alc": " Vol. % Alc",
+    "Stammwürze": "°P",
+    "Trinktemperatur": "°C",
+}
+DISPLAY_LABELS = {
+    "Trinktemperatur": "Optimale Trinktemperatur",
+}
+HEADER_ALIASES = {
+    "Trinktemperatur": ("Optimale Trinktemperatur",),
+}
 OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", "public"))
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
@@ -69,21 +80,28 @@ def escape(value: object) -> str:
     return html.escape(str(value), quote=True)
 
 
+def header_index(header_row: list[str], name: str) -> int | None:
+    for candidate in (name, *HEADER_ALIASES.get(name, ())):
+        if candidate in header_row:
+            return header_row.index(candidate)
+    return None
+
+
 def visible_beers(rows: list[list[str]]) -> list[dict[str, str]]:
     if not rows:
         raise ValueError("The sheet is empty; the first row must contain the column headers.")
 
     header_row = rows[0]
-    missing = [name for name in REQUIRED_HEADERS if name not in header_row]
+    missing = [name for name in REQUIRED_HEADERS if header_index(header_row, name) is None]
     if missing:
         raise ValueError(
             "Could not find expected header(s) in the first row: " + ", ".join(missing)
         )
 
-    id_index = header_row.index(ID_HEADER)
-    color_index = header_row.index(COLOR_HEADER)
-    column_indexes = {name: header_row.index(name) for name in DISPLAY_HEADERS}
-    visibility_index = header_row.index(VISIBILITY_HEADER)
+    id_index = header_index(header_row, ID_HEADER)
+    color_index = header_index(header_row, COLOR_HEADER)
+    column_indexes = {name: header_index(header_row, name) for name in DISPLAY_HEADERS}
+    visibility_index = header_index(header_row, VISIBILITY_HEADER)
     beers = []
     seen_ids: dict[str, int] = {}
     for row_number, row in enumerate(rows[1:], start=2):  # Row 1 is the header.
@@ -187,9 +205,17 @@ def render_beer_index(beers: list[dict[str, str]]) -> str:
 """
 
 
+def detail_value(name: str, raw: str) -> str:
+    value = raw.strip()
+    if not value:
+        return "—"
+    return f"{value}{UNIT_SUFFIXES.get(name, '')}"
+
+
 def render_beer_detail(beer: dict[str, str]) -> str:
     details = "\n".join(
-        f'<div class="detail"><dt>{escape(name)}</dt><dd>{escape(beer[name]) or "—"}</dd></div>'
+        f'<div class="detail"><dt>{escape(DISPLAY_LABELS.get(name, name))}</dt>'
+        f'<dd>{escape(detail_value(name, beer[name]))}</dd></div>'
         for name in DISPLAY_HEADERS
         if name != "Biername"
     )
