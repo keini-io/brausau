@@ -7,6 +7,7 @@ import json
 import os
 import re
 import shutil
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.parse import quote
 
@@ -21,6 +22,11 @@ SHEET_TAB = os.environ.get("GOOGLE_SHEET_TAB", "biere")
 COLOR_TAB = "Kronkorken"
 COLOR_NAME_HEADER = "Farbe"
 COLOR_HEX_HEADER = "Hex"
+GLASS_TAB = "glaeser"
+GLASS_NAME_HEADER = "Name"
+GLASS_FILE_HEADER = "File"
+GLASS_NAME_KEY = "_glass_name"
+GLASS_ASSET_DIR = Path(__file__).resolve().parent.parent / "site" / "assets" / "glasses"
 DISPLAY_HEADERS = (
     "Sud",
     "Biername",
@@ -38,14 +44,18 @@ DISPLAY_HEADERS = (
 ID_HEADER = "ID"
 VISIBILITY_HEADER = "Leer"
 COLOR_HEADER = "Farbe"
-REQUIRED_HEADERS = (ID_HEADER, *DISPLAY_HEADERS, COLOR_HEADER, VISIBILITY_HEADER)
+GLASS_HEADER = "Glas"
+REQUIRED_HEADERS = (
+    ID_HEADER,
+    *DISPLAY_HEADERS,
+    COLOR_HEADER,
+    GLASS_HEADER,
+    VISIBILITY_HEADER,
+)
 UNIT_SUFFIXES = {
     "Alc": " Vol. % Alc",
     "Stammwürze": "°P",
     "Trinktemperatur": "°C",
-}
-DISPLAY_LABELS = {
-    "Trinktemperatur": "Optimale Trinktemperatur",
 }
 HEADER_ALIASES = {
     "Trinktemperatur": ("Optimale Trinktemperatur",),
@@ -54,6 +64,7 @@ OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", "public"))
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
+GLASS_FILE_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*\.svg$")
 
 
 def sheet_values(tab_name: str = SHEET_TAB) -> list[list[str]]:
@@ -126,8 +137,49 @@ def color_lookup(rows: list[list[str]]) -> dict[str, str]:
     return colors
 
 
+def glass_lookup(rows: list[list[str]]) -> dict[str, str]:
+    if not rows:
+        raise ValueError(f"The {GLASS_TAB!r} tab is empty; it must contain Name and File headers.")
+
+    header_row = rows[0]
+    missing = [name for name in (GLASS_NAME_HEADER, GLASS_FILE_HEADER) if name not in header_row]
+    if missing:
+        raise ValueError(
+            f"Could not find expected header(s) in the {GLASS_TAB!r} tab: "
+            + ", ".join(missing)
+        )
+
+    name_index = header_row.index(GLASS_NAME_HEADER)
+    file_index = header_row.index(GLASS_FILE_HEADER)
+    glasses: dict[str, str] = {}
+    for row_number, row in enumerate(rows[1:], start=2):
+        name = row[name_index].strip() if name_index < len(row) else ""
+        filename = row[file_index].strip() if file_index < len(row) else ""
+        if not name and not filename:
+            continue
+        if not name:
+            raise ValueError(f"Missing glass Name in {GLASS_TAB!r} tab row {row_number}.")
+        if not GLASS_FILE_PATTERN.fullmatch(filename):
+            raise ValueError(
+                f"Invalid or missing SVG File in {GLASS_TAB!r} tab row {row_number}: "
+                f"{filename!r}. Use a local .svg filename such as weizen.svg."
+            )
+        if not (GLASS_ASSET_DIR / filename).is_file():
+            raise ValueError(
+                f"Glass file {filename!r} from {GLASS_TAB!r} tab row {row_number} "
+                f"does not exist in site/assets/glasses/."
+            )
+        key = name.casefold()
+        if key in glasses:
+            raise ValueError(f"Duplicate glass Name {name!r} in {GLASS_TAB!r} tab.")
+        glasses[key] = filename
+    return glasses
+
+
 def visible_beers(
-    rows: list[list[str]], colors: dict[str, str] | None = None
+    rows: list[list[str]],
+    colors: dict[str, str] | None = None,
+    glasses: dict[str, str] | None = None,
 ) -> list[dict[str, str]]:
     if not rows:
         raise ValueError("The sheet is empty; the first row must contain the column headers.")
@@ -141,6 +193,7 @@ def visible_beers(
 
     id_index = header_index(header_row, ID_HEADER)
     color_index = header_index(header_row, COLOR_HEADER)
+    glass_index = header_index(header_row, GLASS_HEADER)
     column_indexes = {name: header_index(header_row, name) for name in DISPLAY_HEADERS}
     visibility_index = header_index(header_row, VISIBILITY_HEADER)
     beers = []
@@ -168,6 +221,16 @@ def visible_beers(
                 f"{color_choice!r}. Select a color Name defined in the {COLOR_TAB!r} tab "
                 f"or use a six-digit hex color such as #D64B32."
             )
+        glass_choice = row[glass_index].strip() if glass_index < len(row) else ""
+        if glass_choice and glasses and glass_choice.casefold() in glasses:
+            glass_file = glasses[glass_choice.casefold()]
+        elif glass_choice:
+            raise ValueError(
+                f"Unknown Glas value on sheet row {row_number}: {glass_choice!r}. "
+                f"Select a glass Name defined in the {GLASS_TAB!r} tab."
+            )
+        else:
+            glass_file = ""
         if beer_id in seen_ids:
             raise ValueError(
                 f"Duplicate visible beer ID {beer_id!r} on sheet rows "
@@ -180,7 +243,15 @@ def visible_beers(
             for name, index in column_indexes.items()
         }
         if any(value.strip() for value in values.values()):
-            beers.append({ID_HEADER: beer_id, COLOR_HEADER: color, **values})
+            beers.append(
+                {
+                    ID_HEADER: beer_id,
+                    COLOR_HEADER: color,
+                    GLASS_HEADER: glass_file,
+                    GLASS_NAME_KEY: glass_choice,
+                    **values,
+                }
+            )
     return beers
 
 
@@ -257,13 +328,43 @@ def detail_value(name: str, raw: str) -> str:
     return f"{value}{UNIT_SUFFIXES.get(name, '')}"
 
 
+def render_glass(beer: dict[str, str]) -> str:
+    filename = beer.get(GLASS_HEADER, "")
+    if not filename:
+        return '''<svg class="hero-mark" viewBox="0 0 120 140" aria-hidden="true" focusable="false">
+        <path class="handle" d="M91 48h10a14 14 0 0 1 0 42H91" />
+        <path class="mug" d="M25 38h66v76a8 8 0 0 1-8 8H33a8 8 0 0 1-8-8z" />
+        <path class="foam" d="M24 43c-9-7-6-20 5-23 2-12 17-17 26-9 9-10 26-5 28 7 13-4 23 9 16 20-4 6-11 8-20 8H34c-4 0-7-1-10-3z" />
+        <path d="M39 62v43M53 62v43M67 62v43" fill="none" stroke="#f3dfb7" stroke-linecap="round" stroke-width="4" opacity=".55" />
+      </svg>'''
+
+    svg_path = GLASS_ASSET_DIR / filename
+    root = ET.parse(svg_path).getroot()
+    root.set("class", "hero-mark")
+    root.set("color", beer[COLOR_HEADER])
+    root.set("aria-hidden", "true")
+    root.set("focusable", "false")
+    ET.register_namespace("", "http://www.w3.org/2000/svg")
+    return ET.tostring(root, encoding="unicode")
+
+
 def render_beer_detail(beer: dict[str, str]) -> str:
+    glass_artwork = render_glass(beer)
+    beer_style = escape(beer["Bierstil"].strip())
+    beer_style_markup = (
+        f'<p class="beer-style">{beer_style}</p>' if beer_style else ""
+    )
+    recommendation = (
+        '<p class="recommendation">Am besten bei '
+        f"<strong>{escape(detail_value('Trinktemperatur', beer['Trinktemperatur']))}</strong> "
+        f"aus einem <strong>{escape(beer.get(GLASS_NAME_KEY) or 'Bierglas')}</strong>.</p>"
+    )
     details = "\n".join(
         f'<div class="detail detail-{escape(name.lower().replace(" ", "-"))}">'
-        f'<dt>{escape(DISPLAY_LABELS.get(name, name))}</dt>'
+        f'<dt>{escape(name)}</dt>'
         f'<dd>{escape(detail_value(name, beer[name]))}</dd></div>'
         for name in DISPLAY_HEADERS
-        if name != "Biername"
+        if name not in ("Biername", "Bierstil", "Trinktemperatur")
     )
     return f"""<!doctype html>
 <html lang="de">
@@ -276,7 +377,7 @@ def render_beer_detail(beer: dict[str, str]) -> str:
   <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png">
   <style>
     @font-face {{ font-family: Skranji; src: url("../../assets/fonts/Skranji-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }}
-    :root {{ color-scheme: dark; font-family: system-ui, sans-serif; color: #f5f0e5; background: #111713; font-synthesis: none; }}
+    :root {{ --beer-title-color: #f5f0e5; color-scheme: dark; font-family: system-ui, sans-serif; color: var(--beer-title-color); background: #111713; font-synthesis: none; }}
     * {{ box-sizing: border-box; }}
     body {{ min-height: 100vh; margin: 0; background: radial-gradient(ellipse at 75% 5%, color-mix(in srgb, var(--beer-color) 19%, transparent), transparent 34rem), #111713; }}
     main {{ width: min(1040px, calc(100% - 2.5rem)); margin: 0 auto; padding: 2rem 0 4rem; }}
@@ -285,13 +386,21 @@ def render_beer_detail(beer: dict[str, str]) -> str:
     nav a::before {{ content: "←"; color: var(--beer-color); font-size: 1.2rem; transition: transform .2s ease; }}
     nav a:hover::before {{ transform: translateX(-4px); }}
     .beer-profile {{ overflow: hidden; border: 1px solid rgb(255 255 255 / 12%); border-radius: 1.5rem; background: linear-gradient(145deg, rgb(255 255 255 / 5%), rgb(255 255 255 / 1%) 50%), #171f1a; box-shadow: 0 24px 80px rgb(0 0 0 / 34%); }}
-    .hero {{ position: relative; isolation: isolate; min-height: 300px; display: flex; align-items: center; padding: clamp(2rem, 7vw, 5rem); border-bottom: 1px solid rgb(255 255 255 / 10%); }}
-    .hero::before {{ position: absolute; z-index: 0; right: 7%; top: 50%; width: clamp(190px, 25vw, 300px); aspect-ratio: 1; content: ""; border: 1px solid color-mix(in srgb, var(--beer-color) 40%, transparent); border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--beer-color) 17%, transparent), transparent 68%); transform: translateY(-50%); }}
-    .hero-copy {{ position: relative; z-index: 1; max-width: 68%; }}
+    .hero {{ position: relative; isolation: isolate; min-height: 380px; display: flex; align-items: center; justify-content: space-between; gap: clamp(1.5rem, 4vw, 3.5rem); padding: clamp(2rem, 7vw, 5rem); border-bottom: 1px solid rgb(255 255 255 / 10%); }}
+    .hero-copy {{ position: relative; z-index: 1; flex: 1 1 auto; max-width: 62%; }}
+    .glass-feature {{ position: relative; z-index: 1; flex: 0 0 min(38%, 360px); display: flex; flex-direction: column; align-items: center; gap: .85rem; }}
+    .glass-visual {{ position: relative; width: clamp(210px, 25vw, 300px); aspect-ratio: 1; display: grid; place-items: center; }}
+    .glass-visual::before {{ position: absolute; inset: 0; content: ""; border: 1px solid color-mix(in srgb, var(--beer-color) 40%, transparent); border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--beer-color) 17%, transparent), transparent 68%); }}
+    .glass-caption {{ width: 100%; padding: .8rem .95rem; border: 1px solid rgb(255 255 255 / 9%); border-radius: .85rem; background: rgb(255 255 255 / 3%); text-align: center; }}
+    .recommendation-label {{ margin: 0 0 .35rem; color: var(--beer-color); font-size: .64rem; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; }}
+    .recommendation {{ margin: 0; color: #c5cbbf; font-size: clamp(.82rem, 1vw, .95rem); line-height: 1.5; text-align: center; }}
+    .recommendation strong {{ color: #f6f0e3; font-weight: 700; }}
+    .beer-style {{ display: flex; align-items: center; gap: .7rem; margin: .75rem 0 0; color: var(--beer-title-color); font-size: clamp(1rem, 1.6vw, 1.2rem); font-weight: 600; line-height: 1.35; }}
+    .beer-style::before {{ width: 1.5rem; height: 2px; flex: 0 0 auto; content: ""; background: var(--beer-color); }}
     .eyebrow {{ display: flex; align-items: center; gap: .7rem; margin: 0 0 1rem; color: #c7bda9; font-size: .72rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }}
     .eyebrow::before {{ width: 1.6rem; height: 2px; content: ""; background: var(--beer-color); }}
-    h1 {{ max-width: 720px; margin: 0; font-family: Skranji, Georgia, serif; font-size: clamp(2.8rem, 8vw, 6.5rem); font-weight: 700; letter-spacing: -.045em; line-height: .98; text-wrap: balance; }}
-    .hero-mark {{ position: absolute; z-index: 1; right: clamp(2.5rem, 10vw, 7rem); top: 50%; width: clamp(88px, 15vw, 150px); height: auto; overflow: visible; transform: translateY(-50%) rotate(5deg); filter: drop-shadow(0 16px 20px rgb(0 0 0 / 35%)); }}
+    h1 {{ max-width: 720px; margin: 0; color: var(--beer-title-color); font-family: Skranji, Georgia, serif; font-size: clamp(2.8rem, 8vw, 6.5rem); font-weight: 700; letter-spacing: -.045em; line-height: .98; text-wrap: balance; }}
+    .hero-mark {{ position: relative; z-index: 1; width: 42%; max-height: 88%; height: auto; overflow: visible; transform: rotate(5deg); filter: drop-shadow(0 16px 20px rgb(0 0 0 / 35%)); }}
     .hero-mark .mug {{ fill: color-mix(in srgb, var(--beer-color) 78%, #d99432); stroke: #f3dfb7; stroke-width: 5; }}
     .hero-mark .foam {{ fill: #f3dfb7; }}
     .hero-mark .handle {{ fill: none; stroke: #f3dfb7; stroke-width: 9; }}
@@ -306,7 +415,7 @@ def render_beer_detail(beer: dict[str, str]) -> str:
     .detail-info, .detail-zutaten {{ grid-column: span 3; display: block; padding: .65rem .25rem; }}
     .detail-info dd, .detail-zutaten dd {{ margin-top: .3rem; font-size: .92rem; font-weight: 450; text-align: left; }}
     @media (max-width: 720px) {{ dl {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} .detail-info, .detail-zutaten {{ grid-column: span 2; }} }}
-    @media (max-width: 600px) {{ main {{ width: calc(100% - 1rem); max-width: 1040px; padding: .75rem 0 2rem; }} nav {{ margin: 0 0 1rem .25rem; }} .beer-profile {{ border-radius: 1rem; }} .hero {{ min-height: 245px; padding: 2rem 1.35rem; }} .hero::before {{ right: -2.5rem; width: 210px; }} .hero-copy {{ max-width: 100%; }} .hero-mark {{ right: 1.3rem; top: auto; bottom: 1rem; width: 66px; transform: rotate(5deg); }} h1 {{ max-width: calc(100% - 1rem); font-size: clamp(2.6rem, 13vw, 4.2rem); }} .details-wrap {{ padding: .8rem .75rem .7rem; }} .section-heading {{ margin-bottom: .35rem; }} dl {{ grid-template-columns: minmax(0, 1fr); column-gap: 0; }} .detail {{ padding: .48rem .15rem; }} dd {{ font-size: .92rem; }} .detail-info, .detail-zutaten {{ grid-column: auto; padding: .55rem .15rem; }} }}
+    @media (max-width: 600px) {{ main {{ width: calc(100% - 1rem); max-width: 1040px; padding: .75rem 0 2rem; }} nav {{ margin: 0 0 1rem .25rem; }} .beer-profile {{ border-radius: 1rem; }} .hero {{ min-height: 0; flex-direction: column; align-items: stretch; gap: 1.25rem; padding: 2rem 1.35rem 1.25rem; }} .hero-copy {{ max-width: 100%; }} .glass-feature {{ flex-basis: auto; width: min(100%, 340px); margin: 0 auto; gap: .65rem; }} .glass-visual {{ width: clamp(180px, 52vw, 220px); }} .hero-mark {{ width: 40%; }} .glass-caption {{ padding: .7rem .8rem; }} .recommendation {{ font-size: .88rem; }} h1 {{ max-width: calc(100% - 1rem); font-size: clamp(2.6rem, 13vw, 4.2rem); }} .details-wrap {{ padding: .8rem .75rem .7rem; }} .section-heading {{ margin-bottom: .35rem; }} dl {{ grid-template-columns: minmax(0, 1fr); column-gap: 0; }} .detail {{ padding: .48rem .15rem; }} dd {{ font-size: .92rem; }} .detail-info, .detail-zutaten {{ grid-column: auto; padding: .55rem .15rem; }} }}
     @media (prefers-reduced-motion: reduce) {{ *, *::before, *::after {{ scroll-behavior: auto !important; transition-duration: .01ms !important; }} }}
   </style>
 </head>
@@ -318,13 +427,15 @@ def render_beer_detail(beer: dict[str, str]) -> str:
       <div class="hero-copy">
         <p class="eyebrow">Brausau · Bierportrait</p>
         <h1>{escape(beer['Biername'])}</h1>
+        {beer_style_markup}
       </div>
-      <svg class="hero-mark" viewBox="0 0 120 140" aria-hidden="true" focusable="false">
-        <path class="handle" d="M91 48h10a14 14 0 0 1 0 42H91" />
-        <path class="mug" d="M25 38h66v76a8 8 0 0 1-8 8H33a8 8 0 0 1-8-8z" />
-        <path class="foam" d="M24 43c-9-7-6-20 5-23 2-12 17-17 26-9 9-10 26-5 28 7 13-4 23 9 16 20-4 6-11 8-20 8H34c-4 0-7-1-10-3z" />
-        <path d="M39 62v43M53 62v43M67 62v43" fill="none" stroke="#f3dfb7" stroke-linecap="round" stroke-width="4" opacity=".55" />
-      </svg>
+      <div class="glass-feature">
+        <div class="glass-visual">{glass_artwork}</div>
+        <div class="glass-caption">
+          <p class="recommendation-label">Servierempfehlung</p>
+          {recommendation}
+        </div>
+      </div>
     </header>
     <section class="details-wrap" aria-label="Bierdetails">
       <h2 class="section-heading">Auf einen Blick</h2>
@@ -347,7 +458,11 @@ def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source_dir, OUTPUT_DIR, dirs_exist_ok=True)
 
-    beers = visible_beers(sheet_values(), color_lookup(sheet_values(COLOR_TAB)))
+    beers = visible_beers(
+        sheet_values(),
+        color_lookup(sheet_values(COLOR_TAB)),
+        glass_lookup(sheet_values(GLASS_TAB)),
+    )
     beers_dir = OUTPUT_DIR / "beers"
     if beers_dir.exists():
         shutil.rmtree(beers_dir)
