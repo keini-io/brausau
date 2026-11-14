@@ -18,6 +18,9 @@ SHEET_ID = os.environ.get(
     "GOOGLE_SHEET_ID", "1Vid837zHDbtGlQy9gt4F6RzCQuFDb4-6EhgV3y-iazQ"
 )
 SHEET_TAB = os.environ.get("GOOGLE_SHEET_TAB", "biere")
+COLOR_TAB = "Kronkorken"
+COLOR_NAME_HEADER = "Farbe"
+COLOR_HEX_HEADER = "Hex"
 DISPLAY_HEADERS = (
     "Sud",
     "Biername",
@@ -53,7 +56,7 @@ ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
 
-def sheet_values() -> list[list[str]]:
+def sheet_values(tab_name: str = SHEET_TAB) -> list[list[str]]:
     """Read the sheet using a service-account key supplied through the environment."""
     service_account_json = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON")
     if not service_account_json:
@@ -64,7 +67,7 @@ def sheet_values() -> list[list[str]]:
         credentials_info, scopes=SCOPES
     )
     session = AuthorizedSession(credentials)
-    escaped_tab = SHEET_TAB.replace("'", "''")
+    escaped_tab = tab_name.replace("'", "''")
     range_name = f"'{escaped_tab}'!A:ZZ"
     url = (
         "https://sheets.googleapis.com/v4/spreadsheets/"
@@ -87,7 +90,45 @@ def header_index(header_row: list[str], name: str) -> int | None:
     return None
 
 
-def visible_beers(rows: list[list[str]]) -> list[dict[str, str]]:
+def color_lookup(rows: list[list[str]]) -> dict[str, str]:
+    if not rows:
+        raise ValueError(
+            f"The {COLOR_TAB!r} tab is empty; it must contain Farbe and Hex headers."
+        )
+
+    header_row = rows[0]
+    missing = [name for name in (COLOR_NAME_HEADER, COLOR_HEX_HEADER) if name not in header_row]
+    if missing:
+        raise ValueError(
+            f"Could not find expected header(s) in the {COLOR_TAB!r} tab: "
+            + ", ".join(missing)
+        )
+
+    name_index = header_row.index(COLOR_NAME_HEADER)
+    hex_index = header_row.index(COLOR_HEX_HEADER)
+    colors: dict[str, str] = {}
+    for row_number, row in enumerate(rows[1:], start=2):
+        name = row[name_index].strip() if name_index < len(row) else ""
+        hex_color = row[hex_index].strip() if hex_index < len(row) else ""
+        if not name and not hex_color:
+            continue
+        if not name:
+            raise ValueError(f"Missing color name in {COLOR_TAB!r} tab row {row_number}.")
+        if not COLOR_PATTERN.fullmatch(hex_color):
+            raise ValueError(
+                f"Invalid or missing Hex value in {COLOR_TAB!r} tab row {row_number}: "
+                f"{hex_color!r}. Use a six-digit hex color such as #D64B32."
+            )
+        key = name.casefold()
+        if key in colors:
+            raise ValueError(f"Duplicate color Name {name!r} in {COLOR_TAB!r} tab.")
+        colors[key] = hex_color
+    return colors
+
+
+def visible_beers(
+    rows: list[list[str]], colors: dict[str, str] | None = None
+) -> list[dict[str, str]]:
     if not rows:
         raise ValueError("The sheet is empty; the first row must contain the column headers.")
 
@@ -116,11 +157,16 @@ def visible_beers(rows: list[list[str]]) -> list[dict[str, str]]:
                 f"ID {beer_id!r} on sheet row {row_number} is invalid. "
                 "Use only letters, numbers, hyphens, and underscores; start with a letter or number."
             )
-        color = row[color_index].strip() if color_index < len(row) else ""
-        if not COLOR_PATTERN.fullmatch(color):
+        color_choice = row[color_index].strip() if color_index < len(row) else ""
+        if COLOR_PATTERN.fullmatch(color_choice):
+            color = color_choice
+        elif colors and color_choice.casefold() in colors:
+            color = colors[color_choice.casefold()]
+        else:
             raise ValueError(
-                f"Invalid or missing Farbe value on sheet row {row_number}: {color!r}. "
-                "Use a six-digit hex color such as #D64B32."
+                f"Unknown or invalid Farbe value on sheet row {row_number}: "
+                f"{color_choice!r}. Select a color Name defined in the {COLOR_TAB!r} tab "
+                f"or use a six-digit hex color such as #D64B32."
             )
         if beer_id in seen_ids:
             raise ValueError(
@@ -301,7 +347,7 @@ def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source_dir, OUTPUT_DIR, dirs_exist_ok=True)
 
-    beers = visible_beers(sheet_values())
+    beers = visible_beers(sheet_values(), color_lookup(sheet_values(COLOR_TAB)))
     beers_dir = OUTPUT_DIR / "beers"
     if beers_dir.exists():
         shutil.rmtree(beers_dir)
