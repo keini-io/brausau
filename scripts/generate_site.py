@@ -377,50 +377,53 @@ def render_beer_detail(beer: dict[str, str]) -> str:
   <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png">
   <style>
     @font-face {{ font-family: Skranji; src: url("../../assets/fonts/Skranji-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }}
-    :root {{ --beer-title-color: #f5f0e5; color-scheme: dark; font-family: system-ui, sans-serif; color: var(--beer-title-color); background: #111713; font-synthesis: none; }}
+    :root {{ --beer-title-color: #f5efdf; --paper: #f4efdf; --punk-pink: #ff2f92; --acid: #d5ff00; color-scheme: light; font-family: system-ui, sans-serif; color: #171717; background: #d5ff00; font-synthesis: none; }}
     * {{ box-sizing: border-box; }}
-    body {{ min-height: 100vh; margin: 0; background: radial-gradient(ellipse at 75% 5%, color-mix(in srgb, var(--beer-color) 19%, transparent), transparent 34rem), #111713; }}
+    body {{ min-height: 100vh; margin: 0; background-color: var(--acid); background-image: radial-gradient(rgb(23 23 23 / 17%) .8px, transparent .8px); background-size: 8px 8px; }}
     main {{ width: min(1040px, calc(100% - 2.5rem)); margin: 0 auto; padding: 2rem 0 4rem; }}
     nav {{ margin-bottom: 1.5rem; }}
-    nav a {{ display: inline-flex; align-items: center; gap: .55rem; color: #e6dfcf; text-decoration: none; font-size: .9rem; font-weight: 650; }}
-    nav a::before {{ content: "←"; color: var(--beer-color); font-size: 1.2rem; transition: transform .2s ease; }}
+    nav a {{ display: inline-flex; align-items: center; gap: .55rem; padding: .35rem .65rem; border: 2px solid #171717; background: var(--paper); color: #171717; text-decoration: none; font-size: .9rem; font-weight: 800; box-shadow: 3px 3px 0 var(--punk-pink); transform: rotate(-1deg); }}
+    nav a::before {{ content: "←"; color: #d60065; font-size: 1.2rem; transition: transform .2s ease; }}
     nav a:hover::before {{ transform: translateX(-4px); }}
-    .beer-profile {{ overflow: hidden; border: 1px solid rgb(255 255 255 / 12%); border-radius: 1.5rem; background: linear-gradient(145deg, rgb(255 255 255 / 5%), rgb(255 255 255 / 1%) 50%), #171f1a; box-shadow: 0 24px 80px rgb(0 0 0 / 34%); }}
-    .hero {{ position: relative; isolation: isolate; min-height: 380px; display: flex; align-items: center; justify-content: space-between; gap: clamp(1.5rem, 4vw, 3.5rem); padding: clamp(2rem, 7vw, 5rem); border-bottom: 1px solid rgb(255 255 255 / 10%); }}
+    .beer-profile {{ overflow: hidden; border: 3px solid #171717; border-radius: 0; background: var(--paper); box-shadow: 12px 12px 0 #171717; }}
+    .hero {{ position: relative; isolation: isolate; min-height: 390px; display: flex; align-items: center; justify-content: space-between; gap: clamp(1.5rem, 4vw, 3.5rem); padding: clamp(2rem, 7vw, 5rem); border-bottom: 4px solid #171717; background: #171717; }}
     .hero-copy {{ position: relative; z-index: 1; flex: 1 1 auto; max-width: 62%; }}
     .glass-feature {{ position: relative; z-index: 1; flex: 0 0 min(38%, 360px); display: flex; flex-direction: column; align-items: center; gap: .85rem; }}
     .glass-visual {{ position: relative; width: clamp(210px, 25vw, 300px); aspect-ratio: 1; display: grid; place-items: center; }}
-    .glass-visual::before {{ position: absolute; inset: 0; content: ""; border: 1px solid color-mix(in srgb, var(--beer-color) 40%, transparent); border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--beer-color) 17%, transparent), transparent 68%); }}
-    .glass-caption {{ width: 100%; padding: .8rem .95rem; border: 1px solid rgb(255 255 255 / 9%); border-radius: .85rem; background: rgb(255 255 255 / 3%); text-align: center; }}
-    .recommendation-label {{ margin: 0 0 .35rem; color: var(--beer-color); font-size: .64rem; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; }}
-    .recommendation {{ margin: 0; color: #c5cbbf; font-size: clamp(.82rem, 1vw, .95rem); line-height: 1.5; text-align: center; }}
-    .recommendation strong {{ color: #f6f0e3; font-weight: 700; }}
-    .beer-style {{ display: flex; align-items: center; gap: .7rem; margin: .75rem 0 0; color: var(--beer-title-color); font-size: clamp(1rem, 1.6vw, 1.2rem); font-weight: 600; line-height: 1.35; }}
+    .glass-visual::before {{ position: absolute; inset: 3%; content: ""; border: 4px solid #171717; border-radius: 50%; background: var(--beer-color); box-shadow: 9px 9px 0 var(--punk-pink); transform: rotate(5deg); }}
+    .glass-caption {{ width: 100%; padding: .85rem 1rem; border: 3px solid #171717; border-radius: 0; background: var(--acid); box-shadow: 7px 7px 0 var(--punk-pink); text-align: center; transform: rotate(-1deg); }}
+    .recommendation-label {{ margin: 0 0 .35rem; color: #171717; font-size: .64rem; font-weight: 900; letter-spacing: .17em; text-transform: uppercase; }}
+    .recommendation {{ margin: 0; color: #171717; font-size: clamp(.82rem, 1vw, .95rem); font-weight: 550; line-height: 1.5; text-align: center; }}
+    .recommendation strong {{ padding: 0 .12em; background: var(--punk-pink); color: #171717; font-weight: 850; }}
+    .beer-style {{ display: flex; align-items: center; gap: .7rem; margin: .75rem 0 0; color: var(--acid); font-size: clamp(1rem, 1.6vw, 1.2rem); font-weight: 700; line-height: 1.35; }}
     .beer-style::before {{ width: 1.5rem; height: 2px; flex: 0 0 auto; content: ""; background: var(--beer-color); }}
-    .eyebrow {{ display: flex; align-items: center; gap: .7rem; margin: 0 0 1rem; color: #c7bda9; font-size: .72rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }}
-    .eyebrow::before {{ width: 1.6rem; height: 2px; content: ""; background: var(--beer-color); }}
-    h1 {{ max-width: 720px; margin: 0; color: var(--beer-title-color); font-family: Skranji, Georgia, serif; font-size: clamp(2.8rem, 8vw, 6.5rem); font-weight: 700; letter-spacing: -.045em; line-height: .98; text-wrap: balance; }}
+    .eyebrow {{ display: inline-flex; align-items: center; gap: .7rem; margin: 0 0 1rem; padding: .35rem .6rem; background: var(--punk-pink); color: #171717; font-size: .72rem; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; transform: rotate(-2deg); }}
+    .eyebrow::before {{ width: 1.6rem; height: 3px; flex: 0 0 auto; content: ""; background: #171717; }}
+    h1 {{ max-width: 720px; margin: 0; color: var(--beer-title-color); font-family: Skranji, Georgia, serif; font-size: clamp(2.8rem, 8vw, 6.5rem); font-weight: 700; letter-spacing: -.045em; line-height: .98; text-shadow: 4px 4px 0 var(--punk-pink); text-wrap: balance; transform: rotate(-1deg); }}
     .hero-mark {{ position: relative; z-index: 1; width: 42%; max-height: 88%; height: auto; overflow: visible; transform: rotate(5deg); filter: drop-shadow(0 16px 20px rgb(0 0 0 / 35%)); }}
-    .hero-mark .mug {{ fill: color-mix(in srgb, var(--beer-color) 78%, #d99432); stroke: #f3dfb7; stroke-width: 5; }}
-    .hero-mark .foam {{ fill: #f3dfb7; }}
-    .hero-mark .handle {{ fill: none; stroke: #f3dfb7; stroke-width: 9; }}
+    .hero-mark .mug {{ fill: color-mix(in srgb, var(--beer-color) 78%, #d99432); stroke: var(--beer-title-color); stroke-width: 5; }}
+    .hero-mark .foam {{ fill: #fff6df; }}
+    .hero-mark .handle {{ fill: none; stroke: var(--beer-title-color); stroke-width: 9; }}
     .details-wrap {{ padding: clamp(.9rem, 2.5vw, 1.5rem); }}
-    .section-heading {{ display: flex; align-items: center; gap: 1rem; margin: 0 0 .55rem; color: #9eaa9f; font-size: .72rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }}
-    .section-heading::after {{ height: 1px; flex: 1; content: ""; background: rgb(255 255 255 / 12%); }}
+    .section-heading {{ display: inline-flex; align-items: center; gap: .6rem; margin: 0 0 .8rem; padding: .35rem .6rem; background: #171717; color: var(--acid); font-size: .72rem; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; transform: rotate(-1deg); }}
+    .section-heading::after {{ width: 1.1rem; height: 3px; content: ""; background: var(--punk-pink); }}
     dl {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 1.1rem; margin: 0; }}
-    .detail {{ min-width: 0; min-height: 0; display: flex; align-items: baseline; justify-content: flex-start; gap: .55rem; padding: .55rem .25rem; border: 0; border-bottom: 1px solid rgb(255 255 255 / 6%); border-radius: 0; background: transparent; }}
-    .detail:hover {{ background: rgb(255 255 255 / 2%); }}
-    dt {{ flex: 0 1 auto; color: #aab4aa; font-size: .72rem; font-weight: 700; letter-spacing: .035em; }}
-    dd {{ min-width: 0; margin: 0; color: #f6f0e3; font-size: .95rem; font-weight: 650; line-height: 1.3; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }}
-    .detail-info, .detail-zutaten {{ grid-column: span 3; display: block; padding: .65rem .25rem; }}
-    .detail-info dd, .detail-zutaten dd {{ margin-top: .3rem; font-size: .92rem; font-weight: 450; text-align: left; }}
+    .detail {{ min-width: 0; min-height: 0; display: flex; align-items: baseline; justify-content: flex-start; gap: .55rem; padding: .65rem .7rem; border: 2px solid #171717; border-radius: 0; background: #fff9e8; box-shadow: 4px 4px 0 var(--punk-pink); }}
+    .detail:nth-child(3n + 1) {{ transform: rotate(-.65deg); }}
+    .detail:nth-child(3n + 2) {{ transform: rotate(.55deg); }}
+    .detail:hover {{ background: #fff; }}
+    dt {{ flex: 0 1 auto; padding: .12rem .25rem; background: var(--acid); color: #171717; font-size: .67rem; font-weight: 900; letter-spacing: .045em; text-transform: uppercase; }}
+    dd {{ min-width: 0; margin: 0; color: #171717; font-size: .95rem; font-weight: 750; line-height: 1.3; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }}
+    .detail-info, .detail-zutaten {{ grid-column: span 3; display: block; padding: .8rem .9rem; border: 3px solid #171717; border-left: 8px solid var(--beer-color); border-radius: 0; background: #fff9e8; box-shadow: 6px 6px 0 #171717; }}
+    .detail-info dt, .detail-zutaten dt {{ display: inline-block; transform: rotate(-1deg); }}
+    .detail-info dd, .detail-zutaten dd {{ margin-top: .4rem; font-size: .95rem; font-weight: 500; text-align: left; }}
     @media (max-width: 720px) {{ dl {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} .detail-info, .detail-zutaten {{ grid-column: span 2; }} }}
-    @media (max-width: 600px) {{ main {{ width: calc(100% - 1rem); max-width: 1040px; padding: .75rem 0 2rem; }} nav {{ margin: 0 0 1rem .25rem; }} .beer-profile {{ border-radius: 1rem; }} .hero {{ min-height: 0; flex-direction: column; align-items: stretch; gap: 1.25rem; padding: 2rem 1.35rem 1.25rem; }} .hero-copy {{ max-width: 100%; }} .glass-feature {{ flex-basis: auto; width: min(100%, 340px); margin: 0 auto; gap: .65rem; }} .glass-visual {{ width: clamp(180px, 52vw, 220px); }} .hero-mark {{ width: 40%; }} .glass-caption {{ padding: .7rem .8rem; }} .recommendation {{ font-size: .88rem; }} h1 {{ max-width: calc(100% - 1rem); font-size: clamp(2.6rem, 13vw, 4.2rem); }} .details-wrap {{ padding: .8rem .75rem .7rem; }} .section-heading {{ margin-bottom: .35rem; }} dl {{ grid-template-columns: minmax(0, 1fr); column-gap: 0; }} .detail {{ padding: .48rem .15rem; }} dd {{ font-size: .92rem; }} .detail-info, .detail-zutaten {{ grid-column: auto; padding: .55rem .15rem; }} }}
+    @media (max-width: 600px) {{ main {{ width: calc(100% - 1rem); max-width: 1040px; padding: .75rem 0 2rem; }} nav {{ margin: 0 0 1rem .25rem; }} .beer-profile {{ width: 100%; min-width: 0; border-radius: 0; box-shadow: 6px 6px 0 #171717; }} .hero {{ min-width: 0; min-height: 0; flex-direction: column; align-items: stretch; gap: 1.25rem; padding: 2rem 1.1rem 1.25rem; }} .hero-copy {{ max-width: 100%; min-width: 0; }} .glass-feature {{ flex: 0 1 auto; width: min(100%, 300px); max-width: 100%; min-width: 0; margin: 0 auto; gap: .65rem; }} .glass-visual {{ width: clamp(180px, 52vw, 220px); max-width: 100%; }} .hero-mark {{ width: 40%; }} .glass-caption {{ min-width: 0; padding: .7rem .8rem; }} .recommendation {{ font-size: .88rem; overflow-wrap: anywhere; }} h1 {{ max-width: calc(100% - 1rem); font-size: clamp(2.6rem, 13vw, 4.2rem); }} .details-wrap {{ width: 100%; min-width: 0; padding: .8rem .75rem .7rem; }} .section-heading {{ margin-bottom: .35rem; }} dl {{ width: 100%; min-width: 0; grid-template-columns: minmax(0, 1fr); column-gap: 0; }} .detail, .detail:nth-child(3n + 1), .detail:nth-child(3n + 2) {{ min-width: 0; padding: .55rem .5rem; transform: none; }} dd {{ min-width: 0; font-size: .92rem; overflow-wrap: anywhere; }} .detail-info, .detail-zutaten {{ grid-column: auto; padding: .65rem .7rem; }} }}
     @media (prefers-reduced-motion: reduce) {{ *, *::before, *::after {{ scroll-behavior: auto !important; transition-duration: .01ms !important; }} }}
   </style>
 </head>
 <body>
-<main style="--beer-color: {beer[COLOR_HEADER]}">
+<main style="--beer-color: {beer[COLOR_HEADER]}; --punk-pink: color-mix(in srgb, var(--beer-color) 12%, #ff2f92); --acid: color-mix(in srgb, var(--beer-color) 12%, #d5ff00)">
   <nav><a href="../">andere Farbe</a></nav>
   <article class="beer-profile">
     <header class="hero">
