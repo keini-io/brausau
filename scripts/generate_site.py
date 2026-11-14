@@ -377,53 +377,67 @@ def render_beer_detail(beer: dict[str, str]) -> str:
   <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png">
   <style>
     @font-face {{ font-family: Skranji; src: url("../../assets/fonts/Skranji-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }}
-    :root {{ --beer-title-color: #f5efdf; --paper: #f4efdf; --punk-pink: #ff2f92; --acid: #d5ff00; color-scheme: light; font-family: system-ui, sans-serif; color: #171717; background: #d5ff00; font-synthesis: none; }}
+    :root {{ --beer-title-color: #f1e8d5; --paper: #f1e8d5; --brew-green: #23372d; --brew-ink: #302b22; --brew-gold: #a47b3c; color-scheme: light; font-family: system-ui, sans-serif; color: var(--brew-ink); background: #e6ddca; font-synthesis: none; }}
     * {{ box-sizing: border-box; }}
-    body {{ min-height: 100vh; margin: 0; background-color: var(--acid); background-image: radial-gradient(rgb(23 23 23 / 17%) .8px, transparent .8px); background-size: 8px 8px; }}
+    body {{ min-height: 100vh; margin: 0; background: radial-gradient(ellipse at 50% 0%, #f5efdf 0, #e6ddca 70%); }}
     main {{ width: min(1040px, calc(100% - 2.5rem)); margin: 0 auto; padding: 2rem 0 4rem; }}
     nav {{ margin-bottom: 1.5rem; }}
-    nav a {{ display: inline-flex; align-items: center; gap: .55rem; padding: .35rem .65rem; border: 2px solid #171717; background: var(--paper); color: #171717; text-decoration: none; font-size: .9rem; font-weight: 800; box-shadow: 3px 3px 0 var(--punk-pink); transform: rotate(-1deg); }}
-    nav a::before {{ content: "←"; color: #d60065; font-size: 1.2rem; transition: transform .2s ease; }}
+    nav a {{ display: inline-flex; align-items: center; gap: .55rem; color: var(--brew-green); text-decoration: none; font-size: .9rem; font-weight: 700; }}
+    nav a::before {{ content: "❧"; color: var(--brew-gold); font-size: 1.2rem; transition: transform .2s ease; }}
+    nav a::after {{ content: "✦"; color: var(--brew-gold); font-size: .72rem; }}
     nav a:hover::before {{ transform: translateX(-4px); }}
-    .beer-profile {{ overflow: hidden; border: 3px solid #171717; border-radius: 0; background: var(--paper); box-shadow: 12px 12px 0 #171717; }}
-    .hero {{ position: relative; isolation: isolate; min-height: 390px; display: flex; align-items: center; justify-content: space-between; gap: clamp(1.5rem, 4vw, 3.5rem); padding: clamp(2rem, 7vw, 5rem); border-bottom: 4px solid #171717; background: #171717; }}
+    .beer-profile {{ position: relative; overflow: hidden; border: 4px double #a48b5a; outline: 1px solid #6f5a35; outline-offset: 5px; border-radius: 2px; background: var(--paper); box-shadow: 0 18px 48px rgb(48 43 34 / 18%); }}
+    .beer-profile::before {{ position: absolute; z-index: 3; inset: 8px; border: 1px solid rgb(164 139 90 / 48%); content: ""; pointer-events: none; }}
+    .hero {{ position: relative; isolation: isolate; min-height: 420px; display: flex; align-items: center; justify-content: space-between; gap: clamp(1.5rem, 4vw, 3.5rem); padding: clamp(2.6rem, 7vw, 5rem); border-bottom: 4px double #b49a64; background: radial-gradient(ellipse at 50% 50%, rgb(164 123 60 / 13%), transparent 62%), repeating-linear-gradient(135deg, transparent 0 14px, rgb(255 255 255 / 2%) 14px 15px), var(--brew-green); }}
+    .hero::before {{ position: absolute; inset: 15px; border: 1px solid rgb(211 189 141 / 58%); content: ""; pointer-events: none; }}
+    .hero::after {{ position: absolute; top: 2px; left: 50%; padding: 0 .8rem; background: var(--brew-green); color: #d3bd8d; content: "✦  ❧  ✦"; font-size: .9rem; letter-spacing: .35em; transform: translateX(-50%); }}
     .hero-copy {{ position: relative; z-index: 1; flex: 1 1 auto; max-width: 62%; }}
     .glass-feature {{ position: relative; z-index: 1; flex: 0 0 min(38%, 360px); display: flex; flex-direction: column; align-items: center; gap: .85rem; }}
+    .glass-feature::before, .glass-feature::after {{ position: absolute; left: 50%; color: #d3bd8d; font-size: 1rem; letter-spacing: .5em; white-space: nowrap; transform: translateX(-50%); }}
+    .glass-feature::before {{ top: -.8rem; content: "❧  ✦  ❧"; }}
+    .glass-feature::after {{ bottom: -1rem; content: "· · · ✦ · · ·"; font-size: .75rem; }}
     .glass-visual {{ position: relative; width: clamp(210px, 25vw, 300px); aspect-ratio: 1; display: grid; place-items: center; }}
-    .glass-visual::before {{ position: absolute; inset: 3%; content: ""; border: 4px solid #171717; border-radius: 50%; background: var(--beer-color); box-shadow: 9px 9px 0 var(--punk-pink); transform: rotate(5deg); }}
-    .glass-caption {{ width: 100%; padding: .85rem 1rem; border: 3px solid #171717; border-radius: 0; background: var(--acid); box-shadow: 7px 7px 0 var(--punk-pink); text-align: center; transform: rotate(-1deg); }}
-    .recommendation-label {{ margin: 0 0 .35rem; color: #171717; font-size: .64rem; font-weight: 900; letter-spacing: .17em; text-transform: uppercase; }}
-    .recommendation {{ margin: 0; color: #171717; font-size: clamp(.82rem, 1vw, .95rem); font-weight: 550; line-height: 1.5; text-align: center; }}
-    .recommendation strong {{ padding: 0 .12em; background: var(--punk-pink); color: #171717; font-weight: 850; }}
-    .beer-style {{ display: flex; align-items: center; gap: .7rem; margin: .75rem 0 0; color: var(--acid); font-size: clamp(1rem, 1.6vw, 1.2rem); font-weight: 700; line-height: 1.35; }}
-    .beer-style::before {{ width: 1.5rem; height: 2px; flex: 0 0 auto; content: ""; background: var(--beer-color); }}
-    .eyebrow {{ display: inline-flex; align-items: center; gap: .7rem; margin: 0 0 1rem; padding: .35rem .6rem; background: var(--punk-pink); color: #171717; font-size: .72rem; font-weight: 900; letter-spacing: .2em; text-transform: uppercase; transform: rotate(-2deg); }}
-    .eyebrow::before {{ width: 1.6rem; height: 3px; flex: 0 0 auto; content: ""; background: #171717; }}
-    h1 {{ max-width: 720px; margin: 0; color: var(--beer-title-color); font-family: Skranji, Georgia, serif; font-size: clamp(2.8rem, 8vw, 6.5rem); font-weight: 700; letter-spacing: -.045em; line-height: .98; text-shadow: 4px 4px 0 var(--punk-pink); text-wrap: balance; transform: rotate(-1deg); }}
+    .glass-visual::before {{ position: absolute; inset: 3%; content: ""; border: 3px double #f1e8d5; border-radius: 50%; background: color-mix(in srgb, var(--beer-color) 34%, #d8c7a2); box-shadow: inset 0 0 0 7px rgb(241 232 213 / 16%), 0 0 0 5px rgb(180 154 100 / 35%); }}
+    .glass-caption {{ width: 100%; padding: .9rem 1rem; border: 3px double #9a8254; border-radius: 2px; background: linear-gradient(#f2e8d2, #e7dac0); box-shadow: inset 0 0 0 3px #f8f1e3; text-align: center; }}
+    .recommendation-label {{ margin: 0 0 .4rem; color: #74603b; font-size: .64rem; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; }}
+    .recommendation-label::before, .recommendation-label::after {{ padding: 0 .45rem; color: #a47b3c; content: "❧"; }}
+    .recommendation {{ margin: 0; color: #302b22; font-size: clamp(.82rem, 1vw, .95rem); line-height: 1.5; text-align: center; }}
+    .recommendation strong {{ color: #23372d; font-weight: 750; }}
+    .beer-style {{ display: flex; align-items: center; gap: .7rem; margin: .75rem 0 0; color: #e6d7b5; font-size: clamp(1rem, 1.6vw, 1.2rem); font-weight: 600; line-height: 1.35; }}
+    .beer-style::before {{ flex: 0 0 auto; color: #c6a96e; content: "❧"; font-size: 1.15rem; }}
+    .beer-style::after {{ flex: 0 0 auto; color: #c6a96e; content: "✦"; font-size: .75rem; }}
+    .eyebrow {{ display: flex; align-items: center; gap: .7rem; margin: 0 0 1.2rem; color: #d3bd8d; font-size: .72rem; font-weight: 750; letter-spacing: .2em; text-transform: uppercase; }}
+    .eyebrow::before, .eyebrow::after {{ flex: 0 0 auto; color: #c6a96e; content: "❧"; font-size: 1rem; }}
+    h1 {{ max-width: 720px; margin: 0; color: var(--beer-title-color); font-family: Skranji, Georgia, serif; font-size: clamp(2.8rem, 8vw, 6.5rem); font-weight: 700; letter-spacing: -.025em; line-height: .98; text-shadow: 1px 2px 0 rgb(0 0 0 / 25%); text-wrap: balance; }}
+    h1::after {{ display: block; margin-top: .55rem; color: #c6a96e; content: "✦  ❦  ✦"; font-family: Georgia, serif; font-size: .2em; letter-spacing: .42em; text-align: center; text-shadow: none; }}
     .hero-mark {{ position: relative; z-index: 1; width: 42%; max-height: 88%; height: auto; overflow: visible; transform: rotate(5deg); filter: drop-shadow(0 16px 20px rgb(0 0 0 / 35%)); }}
-    .hero-mark .mug {{ fill: color-mix(in srgb, var(--beer-color) 78%, #d99432); stroke: var(--beer-title-color); stroke-width: 5; }}
+    .hero-mark .mug {{ fill: color-mix(in srgb, var(--beer-color) 78%, #d99432); stroke: #e8d9b8; stroke-width: 5; }}
     .hero-mark .foam {{ fill: #fff6df; }}
-    .hero-mark .handle {{ fill: none; stroke: var(--beer-title-color); stroke-width: 9; }}
-    .details-wrap {{ padding: clamp(.9rem, 2.5vw, 1.5rem); }}
-    .section-heading {{ display: inline-flex; align-items: center; gap: .6rem; margin: 0 0 .8rem; padding: .35rem .6rem; background: #171717; color: var(--acid); font-size: .72rem; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; transform: rotate(-1deg); }}
-    .section-heading::after {{ width: 1.1rem; height: 3px; content: ""; background: var(--punk-pink); }}
+    .hero-mark .handle {{ fill: none; stroke: #e8d9b8; stroke-width: 9; }}
+    .details-wrap {{ position: relative; padding: clamp(1.25rem, 2.5vw, 1.8rem); }}
+    .details-wrap::before {{ position: absolute; top: -.8rem; left: 50%; z-index: 1; padding: 0 .9rem; background: var(--paper); color: #a47b3c; content: "❧  ✦  ❧"; letter-spacing: .3em; transform: translateX(-50%); }}
+    .details-wrap::after {{ display: block; margin: 1rem auto 0; color: #9f895a; content: "❧  ·  ✦  ·  ❧"; font-size: .9rem; letter-spacing: .3em; text-align: center; }}
+    .section-heading {{ display: flex; align-items: center; gap: .7rem; margin: 0 0 .9rem; color: #66583e; font-size: .72rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }}
+    .section-heading::before, .section-heading::after {{ height: 1px; flex: 1; content: ""; background: linear-gradient(90deg, transparent, #9f895a 35%, #9f895a 65%, transparent); }}
     dl {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 1.1rem; margin: 0; }}
-    .detail {{ min-width: 0; min-height: 0; display: flex; align-items: baseline; justify-content: flex-start; gap: .55rem; padding: .65rem .7rem; border: 2px solid #171717; border-radius: 0; background: #fff9e8; box-shadow: 4px 4px 0 var(--punk-pink); }}
-    .detail:nth-child(3n + 1) {{ transform: rotate(-.65deg); }}
-    .detail:nth-child(3n + 2) {{ transform: rotate(.55deg); }}
-    .detail:hover {{ background: #fff; }}
-    dt {{ flex: 0 1 auto; padding: .12rem .25rem; background: var(--acid); color: #171717; font-size: .67rem; font-weight: 900; letter-spacing: .045em; text-transform: uppercase; }}
-    dd {{ min-width: 0; margin: 0; color: #171717; font-size: .95rem; font-weight: 750; line-height: 1.3; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }}
-    .detail-info, .detail-zutaten {{ grid-column: span 3; display: block; padding: .8rem .9rem; border: 3px solid #171717; border-left: 8px solid var(--beer-color); border-radius: 0; background: #fff9e8; box-shadow: 6px 6px 0 #171717; }}
-    .detail-info dt, .detail-zutaten dt {{ display: inline-block; transform: rotate(-1deg); }}
-    .detail-info dd, .detail-zutaten dd {{ margin-top: .4rem; font-size: .95rem; font-weight: 500; text-align: left; }}
+    .detail {{ min-width: 0; min-height: 0; display: flex; align-items: baseline; justify-content: flex-start; gap: .55rem; padding: .65rem .7rem; border: 1px solid #d1c3a1; border-top: 2px solid #b49a64; border-radius: 2px; background: linear-gradient(135deg, #f7f0e2, #eee4cf); box-shadow: inset 0 0 0 2px rgb(255 255 255 / 48%); }}
+    .detail:hover {{ background: #faf4e8; }}
+    dt {{ flex: 0 1 auto; color: #756b58; font-size: .68rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }}
+    dt::after {{ padding-left: .35rem; color: #aa8d56; content: "·"; }}
+    dd {{ min-width: 0; margin: 0; color: #302b22; font-size: .95rem; font-weight: 650; line-height: 1.35; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }}
+    .detail-info, .detail-zutaten {{ position: relative; grid-column: span 3; display: block; padding: .9rem 1.6rem; border: 3px double #b49a64; border-left: 5px solid var(--beer-color); border-radius: 2px; background: linear-gradient(135deg, #f6efdf, #ece1ca); box-shadow: inset 0 0 0 3px rgb(255 255 255 / 45%); }}
+    .detail-info::before, .detail-zutaten::before {{ position: absolute; top: .6rem; right: .65rem; color: #ad925c; content: "✦"; font-size: .8rem; }}
+    .detail-info::after, .detail-zutaten::after {{ position: absolute; right: .65rem; bottom: .35rem; color: #ad925c; content: "❧"; font-size: 1.1rem; }}
+    .detail-info dt, .detail-zutaten dt {{ color: #66583e; }}
+    .detail-info dd, .detail-zutaten dd {{ margin-top: .35rem; font-size: .95rem; font-weight: 450; text-align: left; }}
+    .detail-info dt::before, .detail-zutaten dt::before {{ padding-right: .35rem; color: #a47b3c; content: "✦"; }}
     @media (max-width: 720px) {{ dl {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} .detail-info, .detail-zutaten {{ grid-column: span 2; }} }}
-    @media (max-width: 600px) {{ main {{ width: calc(100% - 1rem); max-width: 1040px; padding: .75rem 0 2rem; }} nav {{ margin: 0 0 1rem .25rem; }} .beer-profile {{ width: 100%; min-width: 0; border-radius: 0; box-shadow: 6px 6px 0 #171717; }} .hero {{ min-width: 0; min-height: 0; flex-direction: column; align-items: stretch; gap: 1.25rem; padding: 2rem 1.1rem 1.25rem; }} .hero-copy {{ max-width: 100%; min-width: 0; }} .glass-feature {{ flex: 0 1 auto; width: min(100%, 300px); max-width: 100%; min-width: 0; margin: 0 auto; gap: .65rem; }} .glass-visual {{ width: clamp(180px, 52vw, 220px); max-width: 100%; }} .hero-mark {{ width: 40%; }} .glass-caption {{ min-width: 0; padding: .7rem .8rem; }} .recommendation {{ font-size: .88rem; overflow-wrap: anywhere; }} h1 {{ max-width: calc(100% - 1rem); font-size: clamp(2.6rem, 13vw, 4.2rem); }} .details-wrap {{ width: 100%; min-width: 0; padding: .8rem .75rem .7rem; }} .section-heading {{ margin-bottom: .35rem; }} dl {{ width: 100%; min-width: 0; grid-template-columns: minmax(0, 1fr); column-gap: 0; }} .detail, .detail:nth-child(3n + 1), .detail:nth-child(3n + 2) {{ min-width: 0; padding: .55rem .5rem; transform: none; }} dd {{ min-width: 0; font-size: .92rem; overflow-wrap: anywhere; }} .detail-info, .detail-zutaten {{ grid-column: auto; padding: .65rem .7rem; }} }}
+    @media (max-width: 600px) {{ main {{ width: calc(100% - 1rem); max-width: 1040px; padding: .75rem 0 2rem; }} nav {{ margin: 0 0 1rem .25rem; }} .beer-profile {{ width: 100%; min-width: 0; border-radius: 2px; box-shadow: 0 10px 28px rgb(48 43 34 / 16%); }} .hero {{ min-width: 0; min-height: 0; flex-direction: column; align-items: stretch; gap: 1.25rem; padding: 2rem 1.1rem 1.25rem; }} .hero-copy {{ max-width: 100%; min-width: 0; }} .glass-feature {{ flex: 0 1 auto; width: min(100%, 300px); max-width: 100%; min-width: 0; margin: 0 auto; gap: .65rem; }} .glass-visual {{ width: clamp(180px, 52vw, 220px); max-width: 100%; }} .hero-mark {{ width: 40%; }} .glass-caption {{ min-width: 0; padding: .7rem .8rem; }} .recommendation {{ font-size: .88rem; overflow-wrap: anywhere; }} h1 {{ max-width: calc(100% - 1rem); font-size: clamp(2.6rem, 13vw, 4.2rem); }} .details-wrap {{ width: 100%; min-width: 0; padding: .8rem .75rem .7rem; }} .section-heading {{ margin-bottom: .35rem; }} dl {{ width: 100%; min-width: 0; grid-template-columns: minmax(0, 1fr); column-gap: 0; }} .detail, .detail:nth-child(3n + 1), .detail:nth-child(3n + 2) {{ min-width: 0; padding: .55rem .5rem; transform: none; }} dd {{ min-width: 0; font-size: .92rem; overflow-wrap: anywhere; }} .detail-info, .detail-zutaten {{ grid-column: auto; padding: .65rem .7rem; }} }}
     @media (prefers-reduced-motion: reduce) {{ *, *::before, *::after {{ scroll-behavior: auto !important; transition-duration: .01ms !important; }} }}
   </style>
 </head>
 <body>
-<main style="--beer-color: {beer[COLOR_HEADER]}; --punk-pink: color-mix(in srgb, var(--beer-color) 12%, #ff2f92); --acid: color-mix(in srgb, var(--beer-color) 12%, #d5ff00)">
+<main style="--beer-color: {beer[COLOR_HEADER]}">
   <nav><a href="../">andere Farbe</a></nav>
   <article class="beer-profile">
     <header class="hero">
