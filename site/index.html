@@ -26,7 +26,7 @@
       margin: 0;
       display: grid;
       place-items: center;
-      padding: clamp(1.4rem, 5vw, 3.5rem) clamp(1rem, 5vw, 3.5rem) clamp(3.4rem, 7vw, 5rem);
+      padding: clamp(1.4rem, 5vw, 3.5rem) clamp(1rem, 5vw, 3.5rem) clamp(4.6rem, 10vw, 7rem);
       overflow-x: hidden;
       background: var(--ink);
       color: var(--ink);
@@ -38,21 +38,37 @@
       background-image: radial-gradient(var(--acid) 1.1px, transparent 1.3px);
       background-size: 15px 15px;
       opacity: .24;
-      transform: rotate(-9deg);
-      animation: drift 36s linear infinite;
+      animation: drift 18s linear infinite, hue 12s ease-in-out infinite alternate;
       pointer-events: none;
     }
     body::after {
       position: fixed;
-      inset: 0;
+      inset: -10%;
       content: "";
       background:
         radial-gradient(circle at 12% 18%, rgb(255 47 146 / .8), transparent 30%),
         radial-gradient(circle at 88% 82%, rgb(213 255 0 / .55), transparent 34%),
         radial-gradient(circle at 80% 8%, rgb(111 247 255 / .38), transparent 28%),
-        repeating-linear-gradient(115deg, transparent 0 30px, rgb(255 255 255 / .03) 30px 32px);
+        repeating-linear-gradient(115deg, transparent 0 30px, rgb(255 255 255 / .03) 30px 32px),
+        repeating-linear-gradient(0deg, rgb(0 0 0 / .16) 0 2px, transparent 2px 5px);
+      animation: bgPulse 9s ease-in-out infinite alternate, scan 6s linear infinite;
       pointer-events: none;
     }
+    .spark {
+      position: fixed;
+      z-index: 0;
+      color: var(--acid);
+      font-family: Skranji, Georgia, serif;
+      font-size: clamp(1.6rem, 4vw, 3rem);
+      line-height: 1;
+      text-shadow: 3px 3px 0 var(--hot);
+      pointer-events: none;
+      animation: sparkFloat 7s ease-in-out infinite, hue 8s ease-in-out infinite alternate;
+    }
+    .spark-1 { top: 9%; left: 6%; animation-delay: 0s, 0s; }
+    .spark-2 { top: 18%; right: 7%; color: var(--ice); animation-delay: -2.4s, -1s; }
+    .spark-3 { bottom: 22%; left: 9%; color: var(--hot); font-size: clamp(1.2rem, 3vw, 2.2rem); animation-delay: -4.1s, -2s; }
+    .spark-4 { right: 11%; bottom: 16%; animation-delay: -1.3s, -3s; }
     main {
       position: relative;
       z-index: 1;
@@ -62,6 +78,7 @@
       border: 4px solid var(--ink);
       box-shadow: 14px 14px 0 var(--hot), 28px 28px 0 var(--acid), 0 0 0 4px var(--ink) inset;
       transform: rotate(-1.1deg);
+      animation: posterPulse 6s ease-in-out infinite;
     }
     main::before {
       position: absolute;
@@ -74,6 +91,7 @@
       border: 1px solid rgb(16 16 16 / .35);
       box-shadow: 0 2px 0 rgb(16 16 16 / .25);
       transform: rotate(-5deg);
+      animation: tapeWiggle 5.5s ease-in-out infinite;
     }
     main::after {
       position: absolute;
@@ -86,6 +104,7 @@
       border: 1px solid rgb(16 16 16 / .35);
       box-shadow: 0 2px 0 rgb(16 16 16 / .25);
       transform: rotate(4deg);
+      animation: tapeWiggle 6.5s ease-in-out infinite reverse;
     }
     .poster {
       position: relative;
@@ -107,6 +126,7 @@
       text-transform: uppercase;
       transform: rotate(1.5deg);
       box-shadow: 4px 4px 0 var(--hot);
+      animation: kickerFlicker 5s steps(1, end) infinite;
     }
     .logo-wrap {
       position: relative;
@@ -120,13 +140,13 @@
     }
     .logo-wrap::before {
       position: absolute;
-      inset: -3%;
-      z-index: -2;
+      inset: -6%;
+      z-index: -3;
       content: "";
-      background: repeating-conic-gradient(from 0deg, var(--acid) 0deg 8deg, transparent 8deg 16deg);
+      background: repeating-conic-gradient(from 0deg, var(--acid) 0deg 6deg, transparent 6deg 14deg, var(--hot) 14deg 17deg, transparent 17deg 24deg);
       border-radius: 50%;
-      opacity: .8;
-      animation: spin 50s linear infinite;
+      opacity: .85;
+      animation: spin 14s linear infinite, blob 7s ease-in-out infinite alternate;
     }
     .logo-wrap::after {
       position: absolute;
@@ -135,6 +155,18 @@
       content: "";
       background: var(--paper);
       border-radius: 50%;
+      box-shadow: 0 0 0 4px var(--ink), 0 0 60px rgb(213 255 0 / .55);
+      animation: haloPulse 3.6s ease-in-out infinite;
+    }
+    .ring {
+      position: absolute;
+      inset: -11%;
+      z-index: -2;
+      border: 4px dashed var(--ice);
+      border-radius: 50%;
+      opacity: .8;
+      animation: spinRev 22s linear infinite;
+      pointer-events: none;
     }
     .logo {
       display: block;
@@ -143,6 +175,7 @@
       min-width: 0;
       height: auto;
       filter: contrast(1.1) drop-shadow(0 6px 0 rgb(16 16 16 / .15));
+      animation: logoMosh 6s steps(1, end) infinite;
     }
     .viva {
       position: relative;
@@ -163,12 +196,15 @@
       text-transform: uppercase;
       transform: rotate(2deg);
       transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease;
+      animation: vivaPulse 2.8s ease-in-out infinite;
     }
-    .viva::before, .viva::after { content: "★"; font-size: .8em; line-height: 0; }
+    .viva::before, .viva::after { content: "★"; font-size: .8em; line-height: 0; animation: spin 5s linear infinite; }
+    .viva::after { animation-direction: reverse; }
     .viva:hover, .viva:focus-visible {
       background: var(--acid);
       transform: rotate(-3deg) scale(1.07);
       box-shadow: 4px 4px 0 var(--ink), 0 0 0 5px var(--hot);
+      animation: vivaShake .35s linear infinite;
     }
     .viva:focus-visible { outline: 3px dashed var(--ink); outline-offset: 6px; }
     .sticker {
@@ -189,8 +225,8 @@
       text-transform: uppercase;
       box-shadow: 5px 5px 0 var(--hot);
     }
-    .sticker-a { top: -4%; right: -3%; transform: rotate(10deg); }
-    .sticker-b { bottom: 2%; left: -4%; background: var(--ice); transform: rotate(-12deg); }
+    .sticker-a { top: -4%; right: -3%; animation: stickerWobble 4.5s ease-in-out infinite; }
+    .sticker-b { bottom: 2%; left: -4%; background: var(--ice); animation: stickerBob 3.8s ease-in-out infinite; }
     .hint {
       margin: 0;
       color: #4a4a43;
@@ -198,6 +234,7 @@
       font-weight: 700;
       letter-spacing: .12em;
       text-transform: uppercase;
+      animation: hintBlink 4s steps(1, end) infinite;
     }
     .ticker {
       position: fixed;
@@ -210,7 +247,13 @@
       background: var(--acid);
       color: var(--ink);
     }
-    .ticker-track { display: flex; width: max-content; animation: marquee 22s linear infinite; }
+    .ticker-track { display: flex; width: max-content; animation: marquee 18s linear infinite; }
+    .ticker-track.alt {
+      color: var(--paper);
+      background: var(--ink);
+      animation: marquee 28s linear infinite;
+    }
+    .ticker-track.alt span { text-shadow: 2px 2px 0 var(--hot); }
     .ticker span {
       display: block;
       padding: .38rem 0;
@@ -220,13 +263,49 @@
       text-transform: uppercase;
       white-space: nowrap;
     }
-    @keyframes drift { to { transform: rotate(-9deg) translate3d(15px, 15px, 0); } }
+    .ticker:hover .ticker-track { animation-play-state: paused; }
+    @keyframes drift { to { transform: translate3d(15px, 15px, 0) rotate(3deg); } }
     @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spinRev { to { transform: rotate(-360deg); } }
     @keyframes marquee { to { transform: translateX(-50%); } }
+    @keyframes hue { to { filter: hue-rotate(55deg) saturate(1.5); } }
+    @keyframes bgPulse {
+      0% { opacity: .82; transform: scale(1) rotate(0deg); }
+      50% { opacity: 1; transform: scale(1.06) rotate(2deg); }
+      100% { opacity: .9; transform: scale(1.02) rotate(-2deg); }
+    }
+    @keyframes scan { to { background-position: 0 0, 0 0, 0 0, 0 0, 0 24px; } }
+    @keyframes posterPulse {
+      0%, 100% { box-shadow: 14px 14px 0 var(--hot), 28px 28px 0 var(--acid), 0 0 0 4px var(--ink) inset; }
+      50% { box-shadow: 20px 20px 0 var(--hot), 38px 38px 0 var(--acid), 0 0 0 4px var(--ink) inset, 0 0 70px rgb(255 47 146 / .35); }
+    }
+    @keyframes tapeWiggle { 0%, 100% { transform: rotate(-5deg) translateY(0); } 50% { transform: rotate(-2deg) translateY(-3px); } }
+    @keyframes kickerFlicker { 0%, 92%, 96%, 100% { opacity: 1; } 93%, 95% { opacity: .55; } }
+    @keyframes blob {
+      0% { border-radius: 48% 52% 55% 45% / 50% 46% 54% 50%; }
+      100% { border-radius: 55% 45% 44% 56% / 46% 55% 45% 54%; }
+    }
+    @keyframes haloPulse { 0%, 100% { box-shadow: 0 0 0 4px var(--ink), 0 0 40px rgb(213 255 0 / .45); } 50% { box-shadow: 0 0 0 4px var(--ink), 0 0 95px rgb(255 47 146 / .65); } }
+    @keyframes logoMosh {
+      0%, 86%, 100% { transform: translate(0, 0) rotate(0deg) skewX(0deg); filter: contrast(1.1) drop-shadow(0 6px 0 rgb(16 16 16 / .15)); }
+      88% { transform: translate(-3px, 1px) rotate(-.6deg) skewX(-1.5deg); filter: contrast(1.2) drop-shadow(4px 0 0 var(--hot)) drop-shadow(-4px 0 0 var(--ice)); }
+      90% { transform: translate(3px, -2px) rotate(.7deg) skewX(1.5deg); filter: contrast(1.2) drop-shadow(-5px 0 0 var(--hot)) drop-shadow(5px 0 0 var(--ice)); }
+      92% { transform: translate(-1px, 2px) rotate(-.3deg); filter: contrast(1.3) drop-shadow(3px 0 0 var(--acid)); }
+      94% { transform: translate(2px, 0) rotate(.4deg) skewX(-1deg); filter: contrast(1.15) drop-shadow(-3px 0 0 var(--hot)); }
+    }
+    @keyframes vivaPulse { 0%, 100% { box-shadow: 8px 8px 0 var(--ink), 0 0 0 5px var(--acid), 0 0 22px rgb(255 47 146 / .5); } 50% { box-shadow: 11px 11px 0 var(--ink), 0 0 0 5px var(--acid), 0 0 48px rgb(255 47 146 / .95); } }
+    @keyframes vivaShake { 0%, 100% { transform: rotate(-3deg) scale(1.07) translateX(0); } 25% { transform: rotate(-4deg) scale(1.07) translateX(-2px); } 75% { transform: rotate(-2deg) scale(1.07) translateX(2px); } }
+    @keyframes stickerWobble { 0%, 100% { transform: rotate(10deg) translateY(0); } 50% { transform: rotate(24deg) translateY(-6px); } }
+    @keyframes stickerBob { 0%, 100% { transform: rotate(-12deg) translate(0, 0); } 50% { transform: rotate(-4deg) translate(4px, -8px); } }
+    @keyframes hintBlink { 0%, 88%, 94%, 100% { opacity: 1; } 90%, 92% { opacity: .35; } }
+    @keyframes sparkFloat { 0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); } 33% { transform: translate(8px, -14px) rotate(18deg) scale(1.15); } 66% { transform: translate(-6px, 8px) rotate(-12deg) scale(.9); } }
     @media (max-width: 560px) {
-      main { transform: none; box-shadow: 8px 8px 0 var(--hot), 16px 16px 0 var(--acid); }
+      main { transform: none; box-shadow: 8px 8px 0 var(--hot), 16px 16px 0 var(--acid); animation: none; }
       .sticker { display: none; }
-      .logo-wrap::before { inset: -1%; }
+      .logo-wrap::before { inset: -2%; }
+      .ring { inset: -5%; }
+      .spark-3, .spark-4 { display: none; }
+      .ticker-track.alt { display: none; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
@@ -234,10 +313,15 @@
   </style>
 </head>
 <body>
+  <span class="spark spark-1" aria-hidden="true">✶</span>
+  <span class="spark spark-2" aria-hidden="true">★</span>
+  <span class="spark spark-3" aria-hidden="true">⚡</span>
+  <span class="spark spark-4" aria-hidden="true">☠</span>
   <main>
     <div class="poster">
       <p class="kicker">Bier ohne Benehmen</p>
       <div class="logo-wrap">
+        <span class="ring" aria-hidden="true"></span>
         <span class="sticker sticker-a" aria-hidden="true">Bier?<br>Ja!</span>
         <img class="logo" src="assets/logo_v2.svg" alt="Brausau logo">
         <span class="sticker sticker-b" aria-hidden="true">Prost<br>du!</span>
@@ -250,6 +334,12 @@
     <div class="ticker-track">
       <span>Brausau ★ Bier ★ Brausau ★ Bier ★ Brausau ★ Bier ★ Brausau ★ Bier ★&nbsp;</span>
       <span>Brausau ★ Bier ★ Brausau ★ Bier ★ Brausau ★ Bier ★ Brausau ★ Bier ★&nbsp;</span>
+    </div>
+    <div class="ticker-track alt">
+      <span>Prost du! ★ Kein Benehmen ★ Prost du! ★ Kein Benehmen ★ Prost du! ★ Kein Benehmen ★&nbsp;</span>
+      <span>Prost du! ★ Kein Benehmen ★ Prost du! ★ Kein Benehmen ★ Prost du! ★ Kein Benehmen ★&nbsp;</span>
+      <span>Prost du! ★ Kein Benehmen ★ Prost du! ★ Kein Benehmen ★ Prost du! ★ Kein Benehmen ★&nbsp;</span>
+      <span>Prost du! ★ Kein Benehmen ★ Prost du! ★ Kein Benehmen ★ Prost du! ★ Kein Benehmen ★&nbsp;</span>
     </div>
   </div>
 </body>
