@@ -22,11 +22,21 @@ SHEET_TAB = os.environ.get("GOOGLE_SHEET_TAB", "biere")
 COLOR_TAB = "Kronkorken"
 COLOR_NAME_HEADER = "Farbe"
 COLOR_HEX_HEADER = "Hex"
+STYLE_TAB = "bierstile"
+STYLE_NAME_HEADER = "Name"
+STYLE_REFERENCE_HEADER = "style name"
+STYLE_GLASS_HEADER = "Bierglas"
 GLASS_TAB = "glaeser"
 GLASS_NAME_HEADER = "Name"
 GLASS_FILE_HEADER = "File"
+GLASS_GENUS_HEADER = "Genus"
 GLASS_NAME_KEY = "_glass_name"
+GLASS_ARTICLE_KEY = "_glass_article"
 GLASS_ASSET_DIR = Path(__file__).resolve().parent.parent / "site" / "assets" / "glasses"
+GLASS_FILE_ALIASES = {
+    "flut.svg": "flute.svg",
+    "tumblr.svg": "tumbler.svg",
+}
 DISPLAY_HEADERS = (
     "Sud",
     "Biername",
@@ -49,7 +59,6 @@ REQUIRED_HEADERS = (
     ID_HEADER,
     *DISPLAY_HEADERS,
     COLOR_HEADER,
-    GLASS_HEADER,
     VISIBILITY_HEADER,
 )
 UNIT_SUFFIXES = {
@@ -164,7 +173,8 @@ def glass_lookup(rows: list[list[str]]) -> dict[str, str]:
                 f"Invalid or missing SVG File in {GLASS_TAB!r} tab row {row_number}: "
                 f"{filename!r}. Use a local .svg filename such as weizen.svg."
             )
-        if not (GLASS_ASSET_DIR / filename).is_file():
+        local_filename = GLASS_FILE_ALIASES.get(filename.casefold(), filename)
+        if not (GLASS_ASSET_DIR / local_filename).is_file():
             raise ValueError(
                 f"Glass file {filename!r} from {GLASS_TAB!r} tab row {row_number} "
                 f"does not exist in site/assets/glasses/."
@@ -172,14 +182,132 @@ def glass_lookup(rows: list[list[str]]) -> dict[str, str]:
         key = name.casefold()
         if key in glasses:
             raise ValueError(f"Duplicate glass Name {name!r} in {GLASS_TAB!r} tab.")
-        glasses[key] = filename
+        glasses[key] = local_filename
     return glasses
+
+
+def glass_article_lookup(rows: list[list[str]]) -> dict[str, str]:
+    if not rows:
+        raise ValueError(
+            f"The {GLASS_TAB!r} tab is empty; it must contain "
+            f"{GLASS_NAME_HEADER} and {GLASS_GENUS_HEADER} headers."
+        )
+
+    header_row = rows[0]
+    missing = [
+        name
+        for name in (GLASS_NAME_HEADER, GLASS_GENUS_HEADER)
+        if name not in header_row
+    ]
+    if missing:
+        raise ValueError(
+            f"Could not find expected header(s) in the {GLASS_TAB!r} tab: "
+            + ", ".join(missing)
+        )
+
+    name_index = header_row.index(GLASS_NAME_HEADER)
+    genus_index = header_row.index(GLASS_GENUS_HEADER)
+    articles: dict[str, str] = {}
+    for row_number, row in enumerate(rows[1:], start=2):
+        name = row[name_index].strip() if name_index < len(row) else ""
+        genus = row[genus_index].strip().casefold() if genus_index < len(row) else ""
+        if not name and not genus:
+            continue
+        if not name:
+            raise ValueError(f"Missing glass Name in {GLASS_TAB!r} tab row {row_number}.")
+        if genus not in {"m", "f", "n"}:
+            raise ValueError(
+                f"Invalid or missing Genus for glass {name!r} in {GLASS_TAB!r} "
+                f"tab row {row_number}: {genus!r}. Use m, f, or n."
+            )
+        key = name.casefold()
+        article = "einer" if genus == "f" else "einem"
+        if key in articles and articles[key] != article:
+            raise ValueError(f"Conflicting Genus values for glass {name!r} in {GLASS_TAB!r} tab.")
+        articles[key] = article
+    return articles
+
+
+def style_glass_lookup(
+    rows: list[list[str]],
+    glasses: dict[str, str],
+    articles: dict[str, str],
+) -> dict[str, tuple[str, str, str, str]]:
+    """Resolve English beer-style references to display names and glass data."""
+    if not rows:
+        raise ValueError(
+            f"The {STYLE_TAB!r} tab is empty; it must contain "
+            f"{STYLE_NAME_HEADER}, {STYLE_REFERENCE_HEADER}, and "
+            f"{STYLE_GLASS_HEADER} headers."
+        )
+
+    header_row = rows[0]
+    missing = [
+        name
+        for name in (
+            STYLE_NAME_HEADER,
+            STYLE_REFERENCE_HEADER,
+            STYLE_GLASS_HEADER,
+        )
+        if name not in header_row
+    ]
+    if missing:
+        raise ValueError(
+            f"Could not find expected header(s) in the {STYLE_TAB!r} tab: "
+            + ", ".join(missing)
+        )
+
+    name_index = header_row.index(STYLE_NAME_HEADER)
+    reference_index = header_row.index(STYLE_REFERENCE_HEADER)
+    glass_index = header_row.index(STYLE_GLASS_HEADER)
+    styles: dict[str, tuple[str, str, str, str]] = {}
+    for row_number, row in enumerate(rows[1:], start=2):
+        display_name = row[name_index].strip() if name_index < len(row) else ""
+        style_reference = (
+            row[reference_index].strip() if reference_index < len(row) else ""
+        )
+        glass_name = row[glass_index].strip() if glass_index < len(row) else ""
+        if not display_name and not style_reference and not glass_name:
+            continue
+        if not display_name:
+            raise ValueError(
+                f"Missing Name in {STYLE_TAB!r} tab row {row_number}."
+            )
+        if not style_reference:
+            continue
+        if not glass_name:
+            # An unused style can lack a glass. If a beer selects it, the
+            # missing relationship is reported at the beer row below.
+            continue
+
+        key = style_reference.casefold()
+        glass_key = glass_name.casefold()
+        if glass_key not in glasses:
+            raise ValueError(
+                f"Unknown Bierglas {glass_name!r} in {STYLE_TAB!r} tab row "
+                f"{row_number}; add a matching Name to the {GLASS_TAB!r} tab."
+            )
+        article = articles.get(glass_key)
+        if article is None:
+            raise ValueError(
+                f"Missing Genus for glass {glass_name!r} referenced in "
+                f"{STYLE_TAB!r} tab row {row_number}."
+            )
+        resolved = (display_name, glass_name, glasses[glass_key], article)
+        if key in styles and styles[key] != resolved:
+            raise ValueError(
+                f"Conflicting mappings for style name {style_reference!r} "
+                f"in the {STYLE_TAB!r} tab."
+            )
+        styles[key] = resolved
+    return styles
 
 
 def visible_beers(
     rows: list[list[str]],
     colors: dict[str, str] | None = None,
     glasses: dict[str, str] | None = None,
+    styles: dict[str, tuple[str, str, str, str]] | None = None,
 ) -> list[dict[str, str]]:
     if not rows:
         raise ValueError("The sheet is empty; the first row must contain the column headers.")
@@ -221,16 +349,30 @@ def visible_beers(
                 f"{color_choice!r}. Select a color Name defined in the {COLOR_TAB!r} tab "
                 f"or use a six-digit hex color such as #D64B32."
             )
-        glass_choice = row[glass_index].strip() if glass_index < len(row) else ""
-        if glass_choice and glasses and glass_choice.casefold() in glasses:
-            glass_file = glasses[glass_choice.casefold()]
-        elif glass_choice:
-            raise ValueError(
-                f"Unknown Glas value on sheet row {row_number}: {glass_choice!r}. "
-                f"Select a glass Name defined in the {GLASS_TAB!r} tab."
-            )
-        else:
-            glass_file = ""
+        glass_choice = ""
+        glass_file = ""
+        glass_article = "einem"
+        display_style_name = ""
+        style_index = column_indexes["Bierstil"]
+        style_name = row[style_index].strip() if style_index < len(row) else ""
+        if styles is not None and style_name:
+            style_match = styles.get(style_name.casefold())
+            if style_match is None:
+                raise ValueError(
+                    f"Could not resolve Bierstil {style_name!r} on sheet row "
+                    f"{row_number} through the {STYLE_TAB!r} and {GLASS_TAB!r} tabs."
+                )
+            display_style_name, glass_choice, glass_file, glass_article = style_match
+        elif glass_index is not None:
+            legacy_glass = row[glass_index].strip() if glass_index < len(row) else ""
+            if legacy_glass and glasses and legacy_glass.casefold() in glasses:
+                glass_choice = legacy_glass
+                glass_file = glasses[legacy_glass.casefold()]
+            elif legacy_glass:
+                raise ValueError(
+                    f"Unknown Glas value on sheet row {row_number}: {legacy_glass!r}. "
+                    f"Select a glass Name defined in the {GLASS_TAB!r} tab."
+                )
         if beer_id in seen_ids:
             raise ValueError(
                 f"Duplicate visible beer ID {beer_id!r} on sheet rows "
@@ -242,6 +384,8 @@ def visible_beers(
             name: row[index] if index < len(row) else ""
             for name, index in column_indexes.items()
         }
+        if display_style_name:
+            values["Bierstil"] = display_style_name
         if any(value.strip() for value in values.values()):
             beers.append(
                 {
@@ -249,6 +393,7 @@ def visible_beers(
                     COLOR_HEADER: color,
                     GLASS_HEADER: glass_file,
                     GLASS_NAME_KEY: glass_choice,
+                    GLASS_ARTICLE_KEY: glass_article,
                     **values,
                 }
             )
@@ -355,9 +500,10 @@ def render_beer_detail(beer: dict[str, str]) -> str:
         f'<p class="beer-style">{beer_style}</p>' if beer_style else ""
     )
     recommendation = (
-        '<p class="recommendation">Am besten bei '
+        '<p class="recommendation">Am besten auf '
         f"<strong>{escape(detail_value('Trinktemperatur', beer['Trinktemperatur']))}</strong> "
-        f"aus einem <strong>{escape(beer.get(GLASS_NAME_KEY) or 'Bierglas')}</strong>.</p>"
+        f"gekühlt aus {escape(beer.get(GLASS_ARTICLE_KEY) or 'einem')} "
+        f"<strong>{escape(beer.get(GLASS_NAME_KEY) or 'Bierglas')}</strong> geniessen.</p>"
     )
     details = "\n".join(
         f'<div class="detail detail-{escape(name.lower().replace(" ", "-"))}">'
@@ -449,7 +595,7 @@ def render_beer_detail(beer: dict[str, str]) -> str:
       <div class="glass-feature">
         <div class="glass-visual">{glass_artwork}</div>
         <div class="glass-caption">
-          <p class="recommendation-label">Servierempfehlung</p>
+          <p class="recommendation-label">Die Sau empfiehlt</p>
           {recommendation}
         </div>
       </div>
@@ -475,10 +621,17 @@ def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source_dir, OUTPUT_DIR, dirs_exist_ok=True)
 
+    glass_rows = sheet_values(GLASS_TAB)
+    glass_files = glass_lookup(glass_rows)
+    glass_articles = glass_article_lookup(glass_rows)
+    style_glasses = style_glass_lookup(
+        sheet_values(STYLE_TAB), glass_files, glass_articles
+    )
     beers = visible_beers(
         sheet_values(),
         color_lookup(sheet_values(COLOR_TAB)),
-        glass_lookup(sheet_values(GLASS_TAB)),
+        glass_files,
+        style_glasses,
     )
     beers_dir = OUTPUT_DIR / "beers"
     if beers_dir.exists():
