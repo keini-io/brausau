@@ -12,13 +12,16 @@ permissions:
   pages: write
   id-token: write
 
+# Queue runs instead of cancelling one that may be mid-deploy.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.compare.outputs.changed }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -26,24 +29,51 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements*.txt
       - name: Install dependencies
-        run: python -m pip install -r requirements.txt
+        run: python -m pip install -r requirements-dev.txt
+      - name: Run tests
+        run: python -m pytest -q
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v5
       - name: Generate static site
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           GOOGLE_SHEET_ID: 1Vid837zHDbtGlQy9gt4F6RzCQuFDb4-6EhgV3y-iazQ
           GOOGLE_SHEET_TAB: biere
           OUTPUT_DIR: _site
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
         run: python scripts/generate_site.py
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
+      # Scheduled runs skip the deploy when the generated site is identical to
+      # the live one. Pushes and manual runs always deploy.
+      - name: Compare with live site
+        id: compare
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          hash=$(cd _site && find . -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)
+          live=$(curl -fsSL "${SITE_URL%/}/build-hash.txt?t=$(date +%s)" 2>/dev/null || true)
+          echo "$hash" > _site/build-hash.txt
+          echo "Generated: $hash"
+          echo "Live:      ${live:-none}"
+          if [ "$EVENT" = "schedule" ] && [ "$hash" = "$live" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes since the last deploy; skipping." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Upload site artifact
+        if: steps.compare.outputs.changed == 'true'
         uses: actions/upload-pages-artifact@v4
         with:
           path: _site
 
   deploy:
     needs: build
+    if: needs.build.outputs.changed == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
