@@ -100,3 +100,30 @@ dd { min-width: 0; margin: 0; color: var(--ink); font-size: .98rem; font-weight:
 @media (max-width: 760px) { dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } .detail-info, .detail-zutaten { grid-column: 1 / -1; } .hero { flex-direction: column; align-items: stretch; gap: 2rem; padding: 2.5rem 1.3rem 2rem; } .hero-copy { max-width: 100%; } .glass-feature { width: min(100%, 340px); margin: 0 auto; } .glass-visual { width: clamp(200px, 56vw, 260px); } h1 { font-size: clamp(2.8rem, 13vw, 4.6rem); } .beer-profile { transform: none; box-shadow: 8px 8px 0 var(--ink), 14px 14px 0 var(--punk-pink), 20px 20px 0 var(--acid); animation: none; } .hero-sticker { display: none; } .hero-halo { right: 50%; top: 78%; width: 58vw; transform: translate(50%, -50%); } }
 @media (max-width: 520px) { main { width: calc(100% - 1.4rem); padding-top: 1.2rem; } nav { margin-left: .2rem; } dl { grid-template-columns: minmax(0, 1fr); gap: 1.1rem; } .detail, .detail:nth-child(3n + 1), .detail:nth-child(3n + 2), .detail:nth-child(3n) { transform: none; animation: none; } .detail-info, .detail-zutaten { grid-column: auto; animation: none; } h1 { font-size: clamp(2.6rem, 14vw, 4rem); } .glass-visual { width: clamp(190px, 58vw, 240px); } .glass-caption { padding: .8rem .8rem .75rem; } .recommendation { font-size: .88rem; overflow-wrap: anywhere; } .hero::after { font-size: 7rem; } .ticker-track.alt { display: none; } main::after { display: none; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; } }
+
+/* --- Extra chaos (driven by assets/js/fx.js) --- */
+/* Ransom-note title: fx.js wraps every letter. */
+h1 .ransom-word { display: inline-block; white-space: nowrap; }
+h1 .ransom { display: inline-block; transform: rotate(var(--r, 0deg)) translateY(var(--y, 0)); transition: transform .15s ease; }
+h1 .ransom:hover { transform: rotate(0deg) translateY(-.08em) scale(1.25); }
+h1 .r1 { padding: 0 .05em; background: var(--paper); color: var(--ink); text-shadow: none; box-shadow: .05em .05em 0 var(--punk-pink); }
+h1 .r2 { padding: 0 .05em; background: var(--punk-pink); color: var(--ink); text-shadow: .03em .03em 0 var(--paper); }
+h1 .r3 { color: var(--acid); }
+h1 .r4 { padding: 0 .04em; border: .03em solid var(--paper); background: var(--ink); color: var(--beer-title-color); font-family: Georgia, "Times New Roman", serif; font-style: italic; font-weight: 900; text-shadow: none; }
+
+/* Carbonation: bubbles rising in front of the glass. */
+.bubbles { position: absolute; inset: 10%; z-index: 2; overflow: hidden; border-radius: 50%; pointer-events: none; }
+.bubbles span { position: absolute; bottom: -20px; left: var(--x); width: var(--size); aspect-ratio: 1; border: 2px solid color-mix(in srgb, var(--beer-color) 55%, #fff); border-radius: 50%; background: radial-gradient(circle at 35% 30%, rgb(255 255 255 / .9) 0 18%, color-mix(in srgb, var(--beer-color) 40%, transparent) 45%, transparent 70%); animation: bubbleRise var(--dur) ease-in infinite; animation-delay: var(--delay); }
+@keyframes bubbleRise { 0% { transform: translate(0, 0) scale(.4); opacity: 0; } 15% { opacity: 1; } 55% { transform: translate(var(--drift), -150px) scale(.8); } 100% { transform: translate(calc(var(--drift) * -1), -300px) scale(1.15); opacity: 0; } }
+
+/* Foam bubbling over the edge between hero and details. */
+.details-wrap::before { position: absolute; top: -27px; right: 0; left: 0; z-index: 3; height: 30px; content: ""; background: radial-gradient(circle at 50% 100%, #fff9e8 0 12px, var(--ink) 12px 15px, transparent 15.5px) 0 0 / 34px 30px repeat-x, radial-gradient(circle at 50% 100%, #fff9e8 0 21px, var(--ink) 21px 24px, transparent 24.5px) 13px 0 / 58px 30px repeat-x; animation: foamSlide 14s linear infinite; pointer-events: none; }
+@keyframes foamSlide { to { background-position: 34px 0, 71px 0; } }
+
+/* "Sau geprüft" rubber stamp that slams onto the details and shakes the page. */
+.stamp { position: absolute; top: clamp(.8rem, 3vw, 1.4rem); right: clamp(1rem, 4vw, 2.6rem); z-index: 4; display: grid; place-items: center; padding: .45rem .9rem .4rem; border: 5px double #d60065; border-radius: .45rem; color: #d60065; font-family: Skranji, Georgia, serif; font-size: clamp(1.1rem, 2.6vw, 1.7rem); line-height: .95; letter-spacing: .08em; text-align: center; text-transform: uppercase; mix-blend-mode: multiply; opacity: .82; transform: rotate(-14deg); animation: stampSlam .42s cubic-bezier(.55, 0, .8, .2) 1.2s both; pointer-events: none; }
+.stamp small { font-size: .5em; letter-spacing: .25em; }
+main { animation: impactShake .4s ease-out 1.62s; }
+@keyframes stampSlam { 0% { transform: rotate(-32deg) scale(4.5); opacity: 0; } 70% { opacity: .9; } 100% { transform: rotate(-14deg) scale(1); opacity: .82; } }
+@keyframes impactShake { 0%, 100% { translate: 0 0; } 15% { translate: -7px 5px; } 35% { translate: 6px -4px; } 55% { translate: -4px 2px; } 75% { translate: 2px -1px; } }
+@media (max-width: 520px) { .stamp { top: .6rem; right: .6rem; font-size: .95rem; } }

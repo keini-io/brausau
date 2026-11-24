@@ -17,7 +17,7 @@ from urllib.parse import quote, urlparse
 ROOT_DIR = Path(__file__).resolve().parent.parent
 SOURCE_DIR = ROOT_DIR / "site"
 GLASS_ASSET_DIR = SOURCE_DIR / "assets" / "glasses"
-CSS_DIR = SOURCE_DIR / "assets" / "css"
+ASSET_DIR = SOURCE_DIR / "assets"
 
 SHEET_ID = os.environ.get(
     "GOOGLE_SHEET_ID", "1Vid837zHDbtGlQy9gt4F6RzCQuFDb4-6EhgV3y-iazQ"
@@ -379,9 +379,21 @@ def asset_version(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()[:10]
 
 
+def asset_url(prefix: str, path: str) -> str:
+    """URL of a file in site/assets/, versioned by its content."""
+    return f"{prefix}assets/{path}?v={asset_version(ASSET_DIR / path)}"
+
+
 def stylesheet(prefix: str, name: str) -> str:
-    version = asset_version(CSS_DIR / name)
-    return f'<link rel="stylesheet" href="{prefix}assets/css/{name}?v={version}">'
+    """Link the shared effects stylesheet plus the page's own stylesheet."""
+    return (
+        f'<link rel="stylesheet" href="{asset_url(prefix, "css/fx.css")}">\n'
+        f'  <link rel="stylesheet" href="{asset_url(prefix, f"css/{name}")}">'
+    )
+
+
+def effects_script(prefix: str) -> str:
+    return f'<script src="{asset_url(prefix, "js/fx.js")}" defer></script>'
 
 
 def head_links(prefix: str) -> str:
@@ -446,6 +458,7 @@ def render_beer_index(beers: list[Beer]) -> str:
     <p class="eyebrow" aria-hidden="true">Brausau · Sortiment</p>
     <h1>Was trinkst du <span class="accent">gerade?</span></h1>
     <p class="sub" aria-hidden="true">Kronkorken statt Krawatte · jeden Besuch neu durchgeschüttelt</p>
+    <button class="shake" id="shake" type="button" hidden>Schütteln!</button>
   </header>
   {content}
 </main>
@@ -461,30 +474,7 @@ def render_beer_index(beers: list[Beer]) -> str:
     <span>Kronkorken statt Krawatte ★ Kein Benehmen ★ Kronkorken statt Krawatte ★ Kein Benehmen ★&nbsp;</span>
   </div>
 </div>
-<script>
-  const grid = document.getElementById("beer-grid");
-  if (grid) {{
-    const cards = Array.from(grid.children);
-    const chaos = window.matchMedia("(max-width: 620px)").matches ? 0.55 : 1;
-    for (let i = cards.length - 1; i > 0; i--) {{
-      const j = Math.floor(Math.random() * (i + 1));
-      [cards[i], cards[j]] = [cards[j], cards[i]];
-    }}
-    cards.forEach((card) => {{
-      card.style.setProperty("--tilt", `${{((Math.random() * 30 - 15) * chaos).toFixed(1)}}deg`);
-      card.style.setProperty("--shift-x", `${{((Math.random() * 40 - 20) * chaos).toFixed(1)}}px`);
-      card.style.setProperty("--shift-y", `${{((Math.random() * 36 - 18) * chaos).toFixed(1)}}px`);
-      card.style.setProperty("--card-scale", `${{(1 + (Math.random() * 0.42 - 0.21) * chaos).toFixed(2)}}`);
-      card.style.setProperty("--cap-rotate", `${{(Math.random() * 360).toFixed(0)}}deg`);
-      card.style.setProperty("--wobble", `${{((Math.random() * 26 + 8) * (Math.random() < 0.5 ? -1 : 1)).toFixed(0)}}deg`);
-      card.style.setProperty("--wobble-duration", `${{(2.8 + Math.random() * 3.8).toFixed(2)}}s`);
-      card.style.setProperty("--wobble-delay", `${{(-Math.random() * 6).toFixed(2)}}s`);
-      card.style.setProperty("--glow-duration", `${{(3.2 + Math.random() * 3).toFixed(2)}}s`);
-      card.style.setProperty("--glow-delay", `${{(-Math.random() * 5).toFixed(2)}}s`);
-      grid.appendChild(card);
-    }});
-  }}
-</script>
+{effects_script("../")}
 </body>
 </html>
 """
@@ -570,6 +560,7 @@ def render_beer_detail(beer: Beer) -> str:
       </div>
     </header>
     <section class="details-wrap" aria-label="Bierdetails">
+      <div class="stamp" aria-hidden="true"><small>Von der Sau</small>geprüft</div>
       <h2 class="section-heading">Auf einen Blick</h2>
       <dl>
 {details}
@@ -577,6 +568,7 @@ def render_beer_detail(beer: Beer) -> str:
     </section>
   </article>
 </main>
+{effects_script("../../")}
 <div class="ticker" aria-hidden="true">
   <div class="ticker-track">
     <span>Brausau ★ Bier ★ Brausau ★ Bier ★ Brausau ★ Bier ★&nbsp;</span>

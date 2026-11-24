@@ -64,3 +64,19 @@ h1 .accent { display: inline-block; padding: .02em .1em .08em; background: var(-
 @media (max-width: 1180px) { .chaos-tag { display: none; } }
 @media (max-width: 620px) { main { width: calc(100% - 1.4rem); padding-top: 1.6rem; } h1 { font-size: clamp(2.6rem, 13vw, 4.4rem); } .beer-grid { gap: 1.6rem .6rem; padding: 1.2rem .8rem; box-shadow: 6px 6px 0 var(--hot), 11px 11px 0 var(--acid), 0 0 60px rgb(213 255 0 / .12) inset; animation: none; } .beer-grid::before { inset: -7px; } .beer-card::after { height: 9%; } .ticker-track.alt { display: none; } .empty { animation: none; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; } }
+
+/* --- Extra chaos (driven by assets/js/fx.js) --- */
+.shake { display: inline-flex; align-items: center; gap: .5rem; margin-top: 1.3rem; padding: .6rem 1.1rem .55rem; border: 3px solid var(--ink); background: var(--acid); color: var(--ink); box-shadow: 6px 6px 0 var(--hot); font: 700 clamp(1rem, 2vw, 1.2rem) / 1 Skranji, Georgia, serif; letter-spacing: .08em; text-transform: uppercase; transform: rotate(2deg); animation: shakeHint 4s ease-in-out infinite; }
+.shake[hidden] { display: none; }
+.shake::before { content: "🍺"; font-size: 1.2em; }
+.shake:hover, .shake:focus-visible { background: var(--hot); color: var(--paper); box-shadow: 9px 9px 0 var(--acid); animation-duration: .5s; }
+.shake:focus-visible { outline: 3px dashed var(--acid); outline-offset: 5px; }
+.shake:active { transform: rotate(2deg) translate(4px, 4px); box-shadow: 2px 2px 0 var(--acid); }
+.beer-grid.shaking { animation: gridShake .6s cubic-bezier(.36, .07, .19, .97), boardPulse 5s ease-in-out infinite; }
+.beer-card:hover .cap { transform: perspective(420px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1.2); transition: transform .08s linear; }
+.beer-card.popped { z-index: 10; }
+.beer-card.popped::before { animation: none; box-shadow: 0 0 0 4px var(--ink), 0 0 0 10px var(--beer-color), 0 0 90px var(--beer-color); }
+.beer-card.popped .cap { animation: capPop .56s cubic-bezier(.45, -.4, .75, .6) forwards; }
+@keyframes shakeHint { 0%, 80%, 100% { rotate: 0deg; } 84% { rotate: -7deg; } 88% { rotate: 6deg; } 92% { rotate: -4deg; } 96% { rotate: 2deg; } }
+@keyframes gridShake { 10%, 90% { translate: -3px 2px; } 20%, 80% { translate: 7px -4px; rotate: .7deg; } 30%, 50%, 70% { translate: -14px 7px; rotate: -1.4deg; } 40%, 60% { translate: 14px -7px; rotate: 1.4deg; } }
+@keyframes capPop { 0% { transform: scale(1.2); } 22% { transform: translateY(10px) scale(1.35, .8); } 100% { transform: translateY(-80vh) rotate(1080deg) scale(.45); opacity: 0; } }
